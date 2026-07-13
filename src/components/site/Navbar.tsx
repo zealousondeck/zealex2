@@ -70,10 +70,10 @@ export function Navbar() {
           ))}
           <div className="mt-2 flex flex-col gap-2">
             <Button variant="outline" className="w-full font-semibold" asChild>
-              <Link to="/">Log in</Link>
+              <Link to="/auth">Log in</Link>
             </Button>
             <Button variant="gold" className="w-full font-semibold" asChild>
-              <Link to="/">Get started</Link>
+              <Link to="/auth">Get started</Link>
             </Button>
           </div>
         </div>
