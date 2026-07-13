@@ -34,10 +34,10 @@ export function Navbar() {
 
         <div className="hidden items-center gap-2 md:flex">
           <Button variant="ghost" className="font-semibold" asChild>
-            <Link to="/">Log in</Link>
+            <Link to="/auth">Log in</Link>
           </Button>
           <Button variant="gold" className="font-semibold" asChild>
-            <Link to="/">Get started</Link>
+            <Link to="/auth">Get started</Link>
           </Button>
         </div>
 
