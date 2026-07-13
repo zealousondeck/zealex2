@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
+import { Route as AuthForgotRouteImport } from './routes/auth.forgot'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
 import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_authenticated/dashboard.profile'
@@ -42,6 +43,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthVerifyRoute = AuthVerifyRouteImport.update({
   id: '/verify',
   path: '/verify',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthForgotRoute = AuthForgotRouteImport.update({
+  id: '/forgot',
+  path: '/forgot',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/auth/forgot': typeof AuthForgotRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
   '/dashboard/notifications': typeof AuthenticatedDashboardNotificationsRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/auth/forgot': typeof AuthForgotRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
   '/dashboard/notifications': typeof AuthenticatedDashboardNotificationsRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/auth/forgot': typeof AuthForgotRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/_authenticated/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
   '/_authenticated/dashboard/notifications': typeof AuthenticatedDashboardNotificationsRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/sitemap.xml'
     | '/dashboard'
+    | '/auth/forgot'
     | '/auth/verify'
     | '/dashboard/exchange'
     | '/dashboard/notifications'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/sitemap.xml'
+    | '/auth/forgot'
     | '/auth/verify'
     | '/dashboard/exchange'
     | '/dashboard/notifications'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/sitemap.xml'
     | '/_authenticated/dashboard'
+    | '/auth/forgot'
     | '/auth/verify'
     | '/_authenticated/dashboard/exchange'
     | '/_authenticated/dashboard/notifications'
@@ -186,6 +198,13 @@ declare module '@tanstack/react-router' {
       path: '/verify'
       fullPath: '/auth/verify'
       preLoaderRoute: typeof AuthVerifyRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/forgot': {
+      id: '/auth/forgot'
+      path: '/forgot'
+      fullPath: '/auth/forgot'
+      preLoaderRoute: typeof AuthForgotRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_authenticated/dashboard': {
@@ -259,10 +278,12 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface AuthRouteChildren {
+  AuthForgotRoute: typeof AuthForgotRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
+  AuthForgotRoute: AuthForgotRoute,
   AuthVerifyRoute: AuthVerifyRoute,
 }
 
