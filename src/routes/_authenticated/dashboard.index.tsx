@@ -174,34 +174,32 @@ export function TransactionRow({ tx }: { tx: Transaction }) {
   const isCredit = tx.type === "sell" || tx.type === "deposit";
   const Icon = tx.category === "giftcard" ? Gift : Bitcoin;
   return (
-    <li className="flex items-center gap-3 px-4 py-3.5">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary text-foreground">
-        <Icon className="h-5 w-5" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold capitalize">
-          {tx.type} {tx.asset}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Ref {tx.reference} ·{" "}
-          {new Date(tx.created_at).toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-          })}
-        </p>
+    <li className="space-y-3 px-4 py-3.5">
+      <div className="flex items-center gap-3">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary text-foreground">
+          <Icon className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold capitalize">
+            {tx.type} {tx.asset}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Ref {tx.reference} ·{" "}
+            {new Date(tx.created_at).toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+            })}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className={cn("font-bold", isCredit ? "text-success" : "text-foreground")}>
+            {isCredit ? "+" : "-"}
+            {nairaFormatter.format(Number(tx.amount))}
+          </p>
+          <StatusBadge status={tx.status} />
+        </div>
       </div>
-      <div className="text-right">
-        <p
-          className={cn(
-            "font-bold",
-            isCredit ? "text-success" : "text-foreground",
-          )}
-        >
-          {isCredit ? "+" : "-"}
-          {nairaFormatter.format(Number(tx.amount))}
-        </p>
-        <StatusBadge status={tx.status} />
-      </div>
+      <StageTracker stage={tx.stage ?? "submitted"} compact />
     </li>
   );
 }

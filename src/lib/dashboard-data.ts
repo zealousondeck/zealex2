@@ -19,6 +19,7 @@ export type Transaction = {
   amount: number;
   quantity: number | null;
   status: string;
+  stage: string;
   reference: string;
   created_at: string;
 };
