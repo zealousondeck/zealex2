@@ -39,6 +39,8 @@ export type Profile = {
   email: string | null;
   avatar_url: string | null;
   phone: string | null;
+  referral_code: string | null;
+  referred_by: string | null;
   created_at: string;
 };
 

@@ -18,9 +18,14 @@ import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthForgotRouteImport } from './routes/auth.forgot'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
+import { Route as AuthenticatedDashboardWithdrawRouteImport } from './routes/_authenticated/dashboard.withdraw'
+import { Route as AuthenticatedDashboardReferralsRouteImport } from './routes/_authenticated/dashboard.referrals'
 import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_authenticated/dashboard.profile'
 import { Route as AuthenticatedDashboardNotificationsRouteImport } from './routes/_authenticated/dashboard.notifications'
+import { Route as AuthenticatedDashboardKycRouteImport } from './routes/_authenticated/dashboard.kyc'
 import { Route as AuthenticatedDashboardExchangeRouteImport } from './routes/_authenticated/dashboard.exchange'
+import { Route as AuthenticatedDashboardDepositRouteImport } from './routes/_authenticated/dashboard.deposit'
+import { Route as AuthenticatedDashboardAnnouncementsRouteImport } from './routes/_authenticated/dashboard.announcements'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -67,6 +72,18 @@ const AuthenticatedDashboardIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardWithdrawRoute =
+  AuthenticatedDashboardWithdrawRouteImport.update({
+    id: '/withdraw',
+    path: '/withdraw',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardReferralsRoute =
+  AuthenticatedDashboardReferralsRouteImport.update({
+    id: '/referrals',
+    path: '/referrals',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardProfileRoute =
   AuthenticatedDashboardProfileRouteImport.update({
     id: '/profile',
@@ -79,10 +96,28 @@ const AuthenticatedDashboardNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardKycRoute =
+  AuthenticatedDashboardKycRouteImport.update({
+    id: '/kyc',
+    path: '/kyc',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardExchangeRoute =
   AuthenticatedDashboardExchangeRouteImport.update({
     id: '/exchange',
     path: '/exchange',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardDepositRoute =
+  AuthenticatedDashboardDepositRouteImport.update({
+    id: '/deposit',
+    path: '/deposit',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardAnnouncementsRoute =
+  AuthenticatedDashboardAnnouncementsRouteImport.update({
+    id: '/announcements',
+    path: '/announcements',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
 
@@ -94,9 +129,14 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/dashboard/announcements': typeof AuthenticatedDashboardAnnouncementsRoute
+  '/dashboard/deposit': typeof AuthenticatedDashboardDepositRoute
   '/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
+  '/dashboard/kyc': typeof AuthenticatedDashboardKycRoute
   '/dashboard/notifications': typeof AuthenticatedDashboardNotificationsRoute
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
+  '/dashboard/referrals': typeof AuthenticatedDashboardReferralsRoute
+  '/dashboard/withdraw': typeof AuthenticatedDashboardWithdrawRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesByTo {
@@ -106,9 +146,14 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/dashboard/announcements': typeof AuthenticatedDashboardAnnouncementsRoute
+  '/dashboard/deposit': typeof AuthenticatedDashboardDepositRoute
   '/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
+  '/dashboard/kyc': typeof AuthenticatedDashboardKycRoute
   '/dashboard/notifications': typeof AuthenticatedDashboardNotificationsRoute
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
+  '/dashboard/referrals': typeof AuthenticatedDashboardReferralsRoute
+  '/dashboard/withdraw': typeof AuthenticatedDashboardWithdrawRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesById {
@@ -121,9 +166,14 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/_authenticated/dashboard/announcements': typeof AuthenticatedDashboardAnnouncementsRoute
+  '/_authenticated/dashboard/deposit': typeof AuthenticatedDashboardDepositRoute
   '/_authenticated/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
+  '/_authenticated/dashboard/kyc': typeof AuthenticatedDashboardKycRoute
   '/_authenticated/dashboard/notifications': typeof AuthenticatedDashboardNotificationsRoute
   '/_authenticated/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
+  '/_authenticated/dashboard/referrals': typeof AuthenticatedDashboardReferralsRoute
+  '/_authenticated/dashboard/withdraw': typeof AuthenticatedDashboardWithdrawRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRouteTypes {
@@ -136,9 +186,14 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/auth/forgot'
     | '/auth/verify'
+    | '/dashboard/announcements'
+    | '/dashboard/deposit'
     | '/dashboard/exchange'
+    | '/dashboard/kyc'
     | '/dashboard/notifications'
     | '/dashboard/profile'
+    | '/dashboard/referrals'
+    | '/dashboard/withdraw'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -148,9 +203,14 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/auth/forgot'
     | '/auth/verify'
+    | '/dashboard/announcements'
+    | '/dashboard/deposit'
     | '/dashboard/exchange'
+    | '/dashboard/kyc'
     | '/dashboard/notifications'
     | '/dashboard/profile'
+    | '/dashboard/referrals'
+    | '/dashboard/withdraw'
     | '/dashboard'
   id:
     | '__root__'
@@ -162,9 +222,14 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/auth/forgot'
     | '/auth/verify'
+    | '/_authenticated/dashboard/announcements'
+    | '/_authenticated/dashboard/deposit'
     | '/_authenticated/dashboard/exchange'
+    | '/_authenticated/dashboard/kyc'
     | '/_authenticated/dashboard/notifications'
     | '/_authenticated/dashboard/profile'
+    | '/_authenticated/dashboard/referrals'
+    | '/_authenticated/dashboard/withdraw'
     | '/_authenticated/dashboard/'
   fileRoutesById: FileRoutesById
 }
@@ -241,6 +306,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/withdraw': {
+      id: '/_authenticated/dashboard/withdraw'
+      path: '/withdraw'
+      fullPath: '/dashboard/withdraw'
+      preLoaderRoute: typeof AuthenticatedDashboardWithdrawRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/referrals': {
+      id: '/_authenticated/dashboard/referrals'
+      path: '/referrals'
+      fullPath: '/dashboard/referrals'
+      preLoaderRoute: typeof AuthenticatedDashboardReferralsRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/profile': {
       id: '/_authenticated/dashboard/profile'
       path: '/profile'
@@ -255,6 +334,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardNotificationsRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/kyc': {
+      id: '/_authenticated/dashboard/kyc'
+      path: '/kyc'
+      fullPath: '/dashboard/kyc'
+      preLoaderRoute: typeof AuthenticatedDashboardKycRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/exchange': {
       id: '/_authenticated/dashboard/exchange'
       path: '/exchange'
@@ -262,22 +348,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardExchangeRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/deposit': {
+      id: '/_authenticated/dashboard/deposit'
+      path: '/deposit'
+      fullPath: '/dashboard/deposit'
+      preLoaderRoute: typeof AuthenticatedDashboardDepositRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/announcements': {
+      id: '/_authenticated/dashboard/announcements'
+      path: '/announcements'
+      fullPath: '/dashboard/announcements'
+      preLoaderRoute: typeof AuthenticatedDashboardAnnouncementsRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
   }
 }
 
 interface AuthenticatedDashboardRouteChildren {
+  AuthenticatedDashboardAnnouncementsRoute: typeof AuthenticatedDashboardAnnouncementsRoute
+  AuthenticatedDashboardDepositRoute: typeof AuthenticatedDashboardDepositRoute
   AuthenticatedDashboardExchangeRoute: typeof AuthenticatedDashboardExchangeRoute
+  AuthenticatedDashboardKycRoute: typeof AuthenticatedDashboardKycRoute
   AuthenticatedDashboardNotificationsRoute: typeof AuthenticatedDashboardNotificationsRoute
   AuthenticatedDashboardProfileRoute: typeof AuthenticatedDashboardProfileRoute
+  AuthenticatedDashboardReferralsRoute: typeof AuthenticatedDashboardReferralsRoute
+  AuthenticatedDashboardWithdrawRoute: typeof AuthenticatedDashboardWithdrawRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
 }
 
 const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
   {
+    AuthenticatedDashboardAnnouncementsRoute:
+      AuthenticatedDashboardAnnouncementsRoute,
+    AuthenticatedDashboardDepositRoute: AuthenticatedDashboardDepositRoute,
     AuthenticatedDashboardExchangeRoute: AuthenticatedDashboardExchangeRoute,
+    AuthenticatedDashboardKycRoute: AuthenticatedDashboardKycRoute,
     AuthenticatedDashboardNotificationsRoute:
       AuthenticatedDashboardNotificationsRoute,
     AuthenticatedDashboardProfileRoute: AuthenticatedDashboardProfileRoute,
+    AuthenticatedDashboardReferralsRoute: AuthenticatedDashboardReferralsRoute,
+    AuthenticatedDashboardWithdrawRoute: AuthenticatedDashboardWithdrawRoute,
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   }
 
