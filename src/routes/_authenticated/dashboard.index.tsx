@@ -95,12 +95,11 @@ function WalletPage() {
         <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">
           Quick actions
         </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
           {quickActions.map((action) => (
             <Link
               key={action.label}
               to={action.to}
-              search={{ tab: action.tab }}
               className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 text-center transition-colors hover:border-gold hover:bg-secondary"
             >
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-gold-soft text-foreground">
