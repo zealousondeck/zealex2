@@ -7,6 +7,10 @@ import {
   User,
   LogOut,
   ShieldCheck,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Users,
+  Megaphone,
 } from "lucide-react";
 import { Logo } from "@/components/site/Logo";
 import { BottomNav } from "@/components/dashboard/BottomNav";
@@ -25,6 +29,11 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 const navItems = [
   { to: "/dashboard", label: "Wallet", icon: Wallet, exact: true },
   { to: "/dashboard/exchange", label: "Exchange", icon: ArrowLeftRight, exact: false },
+  { to: "/dashboard/deposit", label: "Deposit", icon: ArrowDownLeft, exact: false },
+  { to: "/dashboard/withdraw", label: "Withdraw", icon: ArrowUpRight, exact: false },
+  { to: "/dashboard/kyc", label: "Verification", icon: ShieldCheck, exact: false },
+  { to: "/dashboard/referrals", label: "Referrals", icon: Users, exact: false },
+  { to: "/dashboard/announcements", label: "Announcements", icon: Megaphone, exact: false },
   { to: "/dashboard/notifications", label: "Notifications", icon: Bell, exact: false },
   { to: "/dashboard/profile", label: "Profile", icon: User, exact: false },
 ] as const;

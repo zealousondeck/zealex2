@@ -4,10 +4,11 @@ import {
   ArrowUpRight,
   Gift,
   Bitcoin,
-  Plus,
   Eye,
   EyeOff,
   Receipt,
+  ShieldCheck,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -17,6 +18,7 @@ import {
   type Transaction,
 } from "@/lib/dashboard-data";
 import { nairaFormatter } from "@/lib/market-data";
+import { StageTracker } from "@/components/dashboard/StageTracker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -25,10 +27,12 @@ export const Route = createFileRoute("/_authenticated/dashboard/")({
 });
 
 const quickActions = [
-  { to: "/dashboard/exchange", label: "Buy crypto", icon: Bitcoin, tab: "buy" },
-  { to: "/dashboard/exchange", label: "Sell crypto", icon: ArrowUpRight, tab: "sell" },
-  { to: "/dashboard/exchange", label: "Sell gift card", icon: Gift, tab: "giftcard" },
-  { to: "/dashboard/exchange", label: "New exchange", icon: Plus, tab: "buy" },
+  { to: "/dashboard/deposit", label: "Deposit", icon: ArrowDownLeft },
+  { to: "/dashboard/withdraw", label: "Withdraw", icon: ArrowUpRight },
+  { to: "/dashboard/exchange", label: "Exchange", icon: Bitcoin },
+  { to: "/dashboard/exchange", label: "Gift card", icon: Gift },
+  { to: "/dashboard/kyc", label: "Verify KYC", icon: ShieldCheck },
+  { to: "/dashboard/referrals", label: "Refer & earn", icon: Users },
 ] as const;
 
 function WalletPage() {
@@ -91,12 +95,11 @@ function WalletPage() {
         <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">
           Quick actions
         </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
           {quickActions.map((action) => (
             <Link
               key={action.label}
               to={action.to}
-              search={{ tab: action.tab }}
               className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 text-center transition-colors hover:border-gold hover:bg-secondary"
             >
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-gold-soft text-foreground">
@@ -171,34 +174,32 @@ export function TransactionRow({ tx }: { tx: Transaction }) {
   const isCredit = tx.type === "sell" || tx.type === "deposit";
   const Icon = tx.category === "giftcard" ? Gift : Bitcoin;
   return (
-    <li className="flex items-center gap-3 px-4 py-3.5">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary text-foreground">
-        <Icon className="h-5 w-5" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold capitalize">
-          {tx.type} {tx.asset}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Ref {tx.reference} ·{" "}
-          {new Date(tx.created_at).toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-          })}
-        </p>
+    <li className="space-y-3 px-4 py-3.5">
+      <div className="flex items-center gap-3">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary text-foreground">
+          <Icon className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold capitalize">
+            {tx.type} {tx.asset}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Ref {tx.reference} ·{" "}
+            {new Date(tx.created_at).toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+            })}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className={cn("font-bold", isCredit ? "text-success" : "text-foreground")}>
+            {isCredit ? "+" : "-"}
+            {nairaFormatter.format(Number(tx.amount))}
+          </p>
+          <StatusBadge status={tx.status} />
+        </div>
       </div>
-      <div className="text-right">
-        <p
-          className={cn(
-            "font-bold",
-            isCredit ? "text-success" : "text-foreground",
-          )}
-        >
-          {isCredit ? "+" : "-"}
-          {nairaFormatter.format(Number(tx.amount))}
-        </p>
-        <StatusBadge status={tx.status} />
-      </div>
+      <StageTracker stage={tx.stage ?? "submitted"} compact />
     </li>
   );
 }

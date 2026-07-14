@@ -14,6 +14,175 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcement_reads: {
+        Row: {
+          announcement_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_reads_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcements: {
+        Row: {
+          active: boolean
+          body: string
+          category: string
+          created_at: string
+          id: string
+          published_by: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          body: string
+          category?: string
+          created_at?: string
+          id?: string
+          published_by?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          published_by?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      deposit_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          note: string | null
+          payment_method_id: string | null
+          proof_path: string | null
+          reference: string
+          stage: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          note?: string | null
+          payment_method_id?: string | null
+          proof_path?: string | null
+          reference?: string
+          stage?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          note?: string | null
+          payment_method_id?: string | null
+          proof_path?: string | null
+          reference?: string
+          stage?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deposit_requests_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kyc_submissions: {
+        Row: {
+          address: string
+          created_at: string
+          date_of_birth: string
+          full_name: string
+          id: string
+          id_document_path: string | null
+          id_number: string
+          id_type: string
+          proof_of_address_path: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          selfie_path: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          date_of_birth: string
+          full_name: string
+          id?: string
+          id_document_path?: string | null
+          id_number: string
+          id_type: string
+          proof_of_address_path?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          selfie_path?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          date_of_birth?: string
+          full_name?: string
+          id?: string
+          id_document_path?: string | null
+          id_number?: string
+          id_type?: string
+          proof_of_address_path?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          selfie_path?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -44,6 +213,48 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_methods: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          bank_name: string | null
+          created_at: string
+          id: string
+          is_default: boolean
+          label: string
+          method_type: string
+          user_id: string
+          wallet_address: string | null
+          wallet_network: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label: string
+          method_type: string
+          user_id: string
+          wallet_address?: string | null
+          wallet_network?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          method_type?: string
+          user_id?: string
+          wallet_address?: string | null
+          wallet_network?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -52,6 +263,8 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          referral_code: string | null
+          referred_by: string | null
           updated_at: string
         }
         Insert: {
@@ -61,6 +274,8 @@ export type Database = {
           full_name?: string | null
           id: string
           phone?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
           updated_at?: string
         }
         Update: {
@@ -70,7 +285,36 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          earnings: number
+          id: string
+          referred_user_id: string
+          referrer_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          earnings?: number
+          id?: string
+          referred_user_id: string
+          referrer_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          earnings?: number
+          id?: string
+          referred_user_id?: string
+          referrer_id?: string
+          status?: string
         }
         Relationships: []
       }
@@ -83,6 +327,7 @@ export type Database = {
           id: string
           quantity: number | null
           reference: string
+          stage: string
           status: string
           type: string
           user_id: string
@@ -95,6 +340,7 @@ export type Database = {
           id?: string
           quantity?: number | null
           reference?: string
+          stage?: string
           status?: string
           type?: string
           user_id: string
@@ -107,8 +353,30 @@ export type Database = {
           id?: string
           quantity?: number | null
           reference?: string
+          stage?: string
           status?: string
           type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
@@ -137,15 +405,79 @@ export type Database = {
         }
         Relationships: []
       }
+      withdrawal_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          note: string | null
+          payment_method_id: string | null
+          reference: string
+          stage: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          note?: string | null
+          payment_method_id?: string | null
+          reference?: string
+          stage?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          note?: string | null
+          payment_method_id?: string | null
+          reference?: string
+          stage?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawal_requests_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      referral_leaderboard: {
+        Row: {
+          display_name: string | null
+          referrals_count: number | null
+          referrer_id: string | null
+          total_earnings: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -272,6 +604,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const

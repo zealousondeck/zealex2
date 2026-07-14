@@ -19,6 +19,7 @@ export type Transaction = {
   amount: number;
   quantity: number | null;
   status: string;
+  stage: string;
   reference: string;
   created_at: string;
 };
@@ -39,6 +40,8 @@ export type Profile = {
   email: string | null;
   avatar_url: string | null;
   phone: string | null;
+  referral_code: string | null;
+  referred_by: string | null;
   created_at: string;
 };
 
