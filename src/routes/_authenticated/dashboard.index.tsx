@@ -4,10 +4,11 @@ import {
   ArrowUpRight,
   Gift,
   Bitcoin,
-  Plus,
   Eye,
   EyeOff,
   Receipt,
+  ShieldCheck,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -17,6 +18,7 @@ import {
   type Transaction,
 } from "@/lib/dashboard-data";
 import { nairaFormatter } from "@/lib/market-data";
+import { StageTracker } from "@/components/dashboard/StageTracker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -25,10 +27,12 @@ export const Route = createFileRoute("/_authenticated/dashboard/")({
 });
 
 const quickActions = [
-  { to: "/dashboard/exchange", label: "Buy crypto", icon: Bitcoin, tab: "buy" },
-  { to: "/dashboard/exchange", label: "Sell crypto", icon: ArrowUpRight, tab: "sell" },
-  { to: "/dashboard/exchange", label: "Sell gift card", icon: Gift, tab: "giftcard" },
-  { to: "/dashboard/exchange", label: "New exchange", icon: Plus, tab: "buy" },
+  { to: "/dashboard/deposit", label: "Deposit", icon: ArrowDownLeft },
+  { to: "/dashboard/withdraw", label: "Withdraw", icon: ArrowUpRight },
+  { to: "/dashboard/exchange", label: "Exchange", icon: Bitcoin },
+  { to: "/dashboard/exchange", label: "Gift card", icon: Gift },
+  { to: "/dashboard/kyc", label: "Verify KYC", icon: ShieldCheck },
+  { to: "/dashboard/referrals", label: "Refer & earn", icon: Users },
 ] as const;
 
 function WalletPage() {
