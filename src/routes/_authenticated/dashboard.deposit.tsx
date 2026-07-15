@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { nairaFormatter } from "@/lib/market-data";
+import { ReceiptActions } from "@/components/dashboard/ReceiptActions";
 import type { PaymentMethod } from "@/lib/payment-methods";
 
 export const Route = createFileRoute("/_authenticated/dashboard/deposit")({
@@ -162,9 +163,25 @@ export function RequestHistory({ rows, title }: { rows: DepositRow[]; title: str
                     Ref {r.reference} · {new Date(r.created_at).toLocaleString()}
                   </p>
                 </div>
-                <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold uppercase">
-                  {r.stage.replace("_", " ")}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold uppercase">
+                    {r.stage.replace("_", " ")}
+                  </span>
+                  <ReceiptActions
+                    receipt={{
+                      title: `${title.replace(/ history$/i, "")} receipt`,
+                      reference: r.reference,
+                      status: r.status,
+                      stage: r.stage,
+                      createdAt: r.created_at,
+                      note: r.note,
+                      rows: [
+                        { label: "Amount", value: nairaFormatter.format(Number(r.amount)) },
+                        { label: "Currency", value: r.currency },
+                      ],
+                    }}
+                  />
+                </div>
               </div>
               <StageTracker stage={r.stage} />
             </li>

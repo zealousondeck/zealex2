@@ -19,6 +19,7 @@ import {
 } from "@/lib/dashboard-data";
 import { nairaFormatter } from "@/lib/market-data";
 import { StageTracker } from "@/components/dashboard/StageTracker";
+import { ReceiptActions } from "@/components/dashboard/ReceiptActions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -199,7 +200,29 @@ export function TransactionRow({ tx }: { tx: Transaction }) {
           <StatusBadge status={tx.status} />
         </div>
       </div>
-      <StageTracker stage={tx.stage ?? "submitted"} compact />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1">
+          <StageTracker stage={tx.stage ?? "submitted"} compact />
+        </div>
+        <ReceiptActions
+          size="xs"
+          receipt={{
+            title: `${tx.type} ${tx.asset} receipt`,
+            reference: tx.reference,
+            status: tx.status,
+            stage: tx.stage,
+            createdAt: tx.created_at,
+            rows: [
+              { label: "Type", value: `${tx.type} · ${tx.category}` },
+              { label: "Asset", value: tx.asset },
+              { label: "Amount", value: nairaFormatter.format(Number(tx.amount)) },
+              ...(tx.quantity != null
+                ? [{ label: "Quantity", value: String(tx.quantity) }]
+                : []),
+            ],
+          }}
+        />
+      </div>
     </li>
   );
 }
