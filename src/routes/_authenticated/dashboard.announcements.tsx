@@ -79,7 +79,7 @@ function AnnouncementsPage() {
         </span>
         <div>
           <h1 className="text-2xl font-bold">Announcements</h1>
-          <p className="text-sm text-muted-foreground">Latest updates from ZEAlex.</p>
+          <p className="text-sm text-muted-foreground">Latest updates from Zealex.</p>
         </div>
       </div>
 

@@ -83,7 +83,7 @@ function ProfilePage() {
             <Skeleton className="h-6 w-40" />
           ) : (
             <p className="truncate text-lg font-bold">
-              {profile?.full_name ?? "ZEAlex user"}
+              {profile?.full_name ?? "Zealex user"}
             </p>
           )}
           <p className="flex items-center gap-1.5 truncate text-sm text-muted-foreground">

@@ -103,7 +103,7 @@ function DepositPage() {
         </span>
         <div>
           <h1 className="text-2xl font-bold">Deposit</h1>
-          <p className="text-sm text-muted-foreground">Fund your ZEAlex wallet.</p>
+          <p className="text-sm text-muted-foreground">Fund your Zealex wallet.</p>
         </div>
       </div>
 

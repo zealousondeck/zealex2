@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * ZEAlex Exchange — luxury fintech design system.
+ * Zealex Exchange — luxury fintech design system.
  * Palette: warm white background, black typography, gold accents.
  * All colors use oklch. Never hardcode colors in components — use tokens.
  */
