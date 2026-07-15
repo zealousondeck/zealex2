@@ -311,6 +311,7 @@ function FileField({
 
 function AdminKycQueue() {
   const queryClient = useQueryClient();
+  const [active, setActive] = useState<Kyc | null>(null);
   const { data } = useQuery({
     queryKey: ["kyc", "queue"],
     queryFn: async () => {
@@ -322,17 +323,6 @@ function AdminKycQueue() {
       return (data ?? []) as Kyc[];
     },
   });
-
-  async function decide(id: string, status: "approved" | "rejected") {
-    const notes = status === "rejected" ? prompt("Reason for rejection?") ?? "" : null;
-    const { error } = await supabase
-      .from("kyc_submissions")
-      .update({ status, review_notes: notes, reviewed_at: new Date().toISOString() })
-      .eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success(`Marked ${status}`);
-    queryClient.invalidateQueries({ queryKey: ["kyc"] });
-  }
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
@@ -350,11 +340,8 @@ function AdminKycQueue() {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => decide(k.id, "rejected")}>
-                Reject
-              </Button>
-              <Button size="sm" variant="gold" onClick={() => decide(k.id, "approved")}>
-                Approve
+              <Button size="sm" variant="outline" onClick={() => setActive(k)}>
+                Review
               </Button>
             </div>
           </li>
@@ -363,6 +350,190 @@ function AdminKycQueue() {
           <p className="py-4 text-sm text-muted-foreground">No pending submissions.</p>
         )}
       </ul>
+      {active && (
+        <AdminReviewDialog
+          submission={active}
+          onClose={() => setActive(null)}
+          onDone={() => {
+            setActive(null);
+            queryClient.invalidateQueries({ queryKey: ["kyc"] });
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function AdminReviewDialog({
+  submission,
+  onClose,
+  onDone,
+}: {
+  submission: Kyc;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [notes, setNotes] = useState(submission.review_notes ?? "");
+  const [busy, setBusy] = useState(false);
+  const [urls, setUrls] = useState<{ id?: string; selfie?: string; proof?: string }>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    async function sign(path: string | null) {
+      if (!path) return undefined;
+      const { data } = await supabase.storage
+        .from("kyc-documents")
+        .createSignedUrl(path, 600);
+      return data?.signedUrl;
+    }
+    (async () => {
+      const [id, selfie, proof] = await Promise.all([
+        sign(submission.id_document_path),
+        sign(submission.selfie_path),
+        sign(submission.proof_of_address_path),
+      ]);
+      if (!cancelled) setUrls({ id, selfie, proof });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [submission]);
+
+  async function decide(status: "approved" | "rejected") {
+    if (status === "rejected" && !notes.trim()) {
+      toast.error("Add reviewer notes explaining the rejection");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase
+        .from("kyc_submissions")
+        .update({
+          status,
+          review_notes: notes.trim() || null,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", submission.id);
+      if (error) throw error;
+
+      await supabase.from("notifications").insert({
+        user_id: submission.user_id,
+        title: status === "approved" ? "KYC approved" : "KYC needs attention",
+        body:
+          status === "approved"
+            ? "Your identity was verified. All limits unlocked."
+            : `Your KYC was rejected: ${notes.trim() || "please resubmit"}`,
+        category: "kyc",
+      });
+      toast.success(`Marked ${status}`);
+      onDone();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border p-4">
+          <div>
+            <h3 className="font-bold">Review KYC · {submission.full_name}</h3>
+            <p className="text-xs text-muted-foreground">
+              Submitted {new Date(submission.created_at).toLocaleString()} · Status{" "}
+              <span className="uppercase">{submission.status}</span>
+            </p>
+          </div>
+          <Button size="sm" variant="ghost" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+
+        <div className="grid gap-5 p-5 md:grid-cols-2">
+          <div className="space-y-3 text-sm">
+            <Field label="Full name" value={submission.full_name} />
+            <Field label="Date of birth" value={submission.date_of_birth} />
+            <Field label="Address" value={submission.address} />
+            <Field label="ID type" value={submission.id_type} />
+            <Field label="ID number" value={submission.id_number} />
+          </div>
+          <div className="space-y-3">
+            <DocumentPreview label="ID document" url={urls.id} />
+            <DocumentPreview label="Selfie" url={urls.selfie} />
+            <DocumentPreview label="Proof of address" url={urls.proof} />
+          </div>
+        </div>
+
+        <div className="space-y-3 border-t border-border p-5">
+          <Label htmlFor="rn">Reviewer notes</Label>
+          <Textarea
+            id="rn"
+            rows={3}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Required when rejecting — shared with the user."
+            maxLength={400}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => decide("rejected")} disabled={busy}>
+              Reject
+            </Button>
+            <Button variant="gold" onClick={() => decide("approved")} disabled={busy}>
+              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Approve
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DocumentPreview({ label, url }: { label: string; url?: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-background p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs font-semibold text-gold hover:underline"
+          >
+            Open
+          </a>
+        )}
+      </div>
+      {!url ? (
+        <p className="text-xs text-muted-foreground">Not provided</p>
+      ) : /\.pdf(\?|$)/i.test(url) ? (
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="block rounded-lg bg-secondary p-4 text-center text-sm font-semibold"
+        >
+          View PDF
+        </a>
+      ) : (
+        <a href={url} target="_blank" rel="noreferrer">
+          <img
+            src={url}
+            alt={label}
+            className="max-h-56 w-full rounded-lg object-contain"
+          />
+        </a>
+      )}
     </div>
   );
 }
