@@ -126,7 +126,7 @@ function AuthPage() {
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {tab === "login"
-              ? "Sign in to access your ZEAlex wallet."
+              ? "Sign in to access your Zealex wallet."
               : "Start trading gift cards & crypto in minutes."}
           </p>
 
@@ -238,7 +238,7 @@ function AuthPage() {
         </div>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          By continuing you agree to ZEAlex's Terms & Privacy Policy.
+          By continuing you agree to Zealex's Terms & Privacy Policy.
         </p>
       </div>
     </div>

@@ -87,7 +87,7 @@ function Index() {
               <span className="text-gradient-gold">best rates</span>, instantly.
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              ZEAlex Exchange turns your gift cards and cryptocurrency into cash in minutes.
+              Zealex Exchange turns your gift cards and cryptocurrency into cash in minutes.
               Premium rates, bank-grade security, and payouts that actually land instantly.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -121,7 +121,7 @@ function Index() {
             <div className="pointer-events-none absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-gold opacity-15 blur-2xl" />
             <img
               src={heroImg}
-              alt="ZEAlex Exchange dashboard showing wallet balance and live exchange rates"
+              alt="Zealex Exchange dashboard showing wallet balance and live exchange rates"
               width={1600}
               height={1200}
               className="w-full rounded-3xl border border-border/60 shadow-card"
@@ -194,7 +194,7 @@ function Index() {
         <Section id="features">
           <motion.div {...fadeUp} className="max-w-2xl">
             <h2 className="font-display text-3xl font-extrabold sm:text-4xl">
-              Why traders choose ZEAlex
+              Why traders choose Zealex
             </h2>
             <p className="mt-3 text-muted-foreground">
               Built for people who take their money seriously. Every detail is designed for speed,
@@ -292,7 +292,7 @@ function Index() {
               Loved by traders everywhere
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Real feedback from people who trade with ZEAlex every day.
+              Real feedback from people who trade with Zealex every day.
             </p>
           </motion.div>
 
@@ -334,7 +334,7 @@ function Index() {
         <div className="grid items-center gap-10 rounded-[2rem] border border-border/60 bg-gradient-ink p-8 text-ink-foreground shadow-card sm:p-12 lg:grid-cols-2">
           <motion.div {...fadeUp}>
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold">
-              <Smartphone className="h-3.5 w-3.5 text-gold" /> ZEAlex mobile
+              <Smartphone className="h-3.5 w-3.5 text-gold" /> Zealex mobile
             </span>
             <h2 className="mt-4 font-display text-3xl font-extrabold sm:text-4xl">
               Your exchange, in your pocket
@@ -368,7 +368,7 @@ function Index() {
           >
             <img
               src={phoneImg}
-              alt="ZEAlex Exchange mobile app on a smartphone"
+              alt="Zealex Exchange mobile app on a smartphone"
               width={1008}
               height={1200}
               loading="lazy"
@@ -386,7 +386,7 @@ function Index() {
               Frequently asked questions
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Everything you need to know about trading on ZEAlex. Still curious? Our support team is
+              Everything you need to know about trading on Zealex. Still curious? Our support team is
               available 24/7.
             </p>
             <Button variant="gold" className="mt-6">
@@ -421,7 +421,7 @@ function Index() {
             Ready to get the best rate on your next trade?
           </h2>
           <p className="mx-auto mt-3 max-w-lg text-gold-foreground/80">
-            Join thousands of traders getting paid faster with ZEAlex Exchange. Sign up in under a
+            Join thousands of traders getting paid faster with Zealex Exchange. Sign up in under a
             minute.
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">

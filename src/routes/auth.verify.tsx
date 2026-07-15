@@ -39,7 +39,7 @@ function VerifyPage() {
         type: "signup",
       });
       if (error) throw error;
-      toast.success("Email verified — welcome to ZEAlex!");
+      toast.success("Email verified — welcome to Zealex!");
       navigate({ to: "/dashboard", replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Invalid or expired code");

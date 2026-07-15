@@ -1,4 +1,4 @@
-// Static reference data for the ZEAlex marketing site (client-safe, no secrets).
+// Static reference data for the Zealex marketing site (client-safe, no secrets).
 // Rates are illustrative baselines; the live app will pull real rates from the backend.
 
 export type CryptoAsset = {
@@ -46,7 +46,7 @@ export const nairaFormatter = new Intl.NumberFormat("en-NG", {
 
 export const faqs = [
   {
-    q: "How fast are payouts on ZEAlex?",
+    q: "How fast are payouts on Zealex?",
     a: "Most gift card and crypto trades are reviewed and paid within 5–15 minutes during business hours. Verified users with a strong history are often paid in under 5 minutes.",
   },
   {
@@ -54,7 +54,7 @@ export const faqs = [
     a: "We support 50+ gift card brands including Amazon, Apple, Steam, and Google Play, plus BTC, ETH, USDT (TRC20/ERC20), BNB, SOL, LTC, and DOGE.",
   },
   {
-    q: "Is ZEAlex safe to use?",
+    q: "Is Zealex safe to use?",
     a: "Yes. We use bank-grade encryption, two-factor authentication, tiered KYC verification, and row-level data protection to keep every account and transaction secure.",
   },
   {
@@ -62,7 +62,7 @@ export const faqs = [
     a: "You can explore rates freely. To withdraw and to unlock higher limits you complete a quick KYC (BVN/NIN or a government ID plus a selfie).",
   },
   {
-    q: "What fees does ZEAlex charge?",
+    q: "What fees does Zealex charge?",
     a: "The rate you see is the rate you get — there are no hidden fees. Withdrawals to Nigerian bank accounts are free.",
   },
 ];
@@ -72,7 +72,7 @@ export const testimonials = [
     name: "Adebayo O.",
     role: "Gift card trader",
     quote:
-      "ZEAlex pays faster than any platform I've used. I sold an Amazon card and had cash in my bank before I finished my coffee.",
+      "Zealex pays faster than any platform I've used. I sold an Amazon card and had cash in my bank before I finished my coffee.",
     initials: "AO",
   },
   {
@@ -86,7 +86,7 @@ export const testimonials = [
     name: "Ibrahim M.",
     role: "Freelancer",
     quote:
-      "Verification took minutes and withdrawals hit instantly. ZEAlex is now the only exchange I trust with my earnings.",
+      "Verification took minutes and withdrawals hit instantly. Zealex is now the only exchange I trust with my earnings.",
     initials: "IM",
   },
 ];

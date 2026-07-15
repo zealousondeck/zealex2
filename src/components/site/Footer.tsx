@@ -31,7 +31,7 @@ export function Footer() {
           <div>
             <Logo invert />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-ink-foreground/60">
-              ZEAlex Exchange is the premium way to trade gift cards and cryptocurrency at the best
+              Zealex Exchange is the premium way to trade gift cards and cryptocurrency at the best
               rates — with instant payouts and bank-grade security.
             </p>
             <form
@@ -75,7 +75,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-sm text-ink-foreground/50 sm:flex-row">
-          <p>© {new Date().getFullYear()} ZEAlex Exchange. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Zealex Exchange. All rights reserved.</p>
           <p>Trade responsibly. Rates are subject to market conditions.</p>
         </div>
       </div>
