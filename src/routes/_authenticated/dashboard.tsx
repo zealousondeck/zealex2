@@ -11,12 +11,14 @@ import {
   ArrowUpRight,
   Users,
   Megaphone,
+  LayoutDashboard,
 } from "lucide-react";
 import { Logo } from "@/components/site/Logo";
 import { BottomNav } from "@/components/dashboard/BottomNav";
 import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
 import { ThemeProvider } from "@/lib/theme";
 import { useNotifications, useRealtimeSync } from "@/lib/dashboard-data";
+import { useIsAdmin } from "@/lib/roles";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -51,6 +53,7 @@ function DashboardInner() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: notifications } = useNotifications();
+  const { data: isAdmin } = useIsAdmin();
   const unread = (notifications ?? []).filter((n) => !n.read).length;
 
   async function handleSignOut() {
@@ -86,6 +89,15 @@ function DashboardInner() {
               )}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="mt-2 flex items-center gap-3 rounded-xl border border-gold/40 bg-gold-soft px-3 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-gold hover:text-gold-foreground"
+            >
+              <LayoutDashboard className="h-5 w-5" />
+              <span className="flex-1">Admin console</span>
+            </Link>
+          )}
         </nav>
         <Button
           variant="ghost"
