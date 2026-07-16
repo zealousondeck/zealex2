@@ -301,7 +301,7 @@ export function useUpdateDepositStatus() {
       userId: string;
       amount: number;
     }) => {
-      const patch: Record<string, unknown> = { status, stage };
+      const patch: any = { status, stage };
       if (note) patch.note = note;
       const { error } = await supabase.from("deposit_requests").update(patch).eq("id", id);
       if (error) throw error;
@@ -361,7 +361,7 @@ export function useUpdateWithdrawalStatus() {
       userId: string;
       amount: number;
     }) => {
-      const patch: Record<string, unknown> = { status, stage };
+      const patch: any = { status, stage };
       if (note) patch.note = note;
       const { error } = await supabase.from("withdrawal_requests").update(patch).eq("id", id);
       if (error) throw error;

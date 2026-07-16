@@ -16,7 +16,7 @@ export async function logAudit(
       action,
       entity_type: entityType ?? null,
       entity_id: entityId ?? null,
-      details: details ?? null,
+      details: (details ?? null) as any,
     });
   } catch {
     /* ignore */

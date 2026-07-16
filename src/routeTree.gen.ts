@@ -17,7 +17,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthForgotRouteImport } from './routes/auth.forgot'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedDashboardWithdrawRouteImport } from './routes/_authenticated/dashboard.withdraw'
 import { Route as AuthenticatedDashboardReferralsRouteImport } from './routes/_authenticated/dashboard.referrals'
 import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_authenticated/dashboard.profile'
@@ -26,6 +28,13 @@ import { Route as AuthenticatedDashboardKycRouteImport } from './routes/_authent
 import { Route as AuthenticatedDashboardExchangeRouteImport } from './routes/_authenticated/dashboard.exchange'
 import { Route as AuthenticatedDashboardDepositRouteImport } from './routes/_authenticated/dashboard.deposit'
 import { Route as AuthenticatedDashboardAnnouncementsRouteImport } from './routes/_authenticated/dashboard.announcements'
+import { Route as AuthenticatedAdminWithdrawalsRouteImport } from './routes/_authenticated/admin.withdrawals'
+import { Route as AuthenticatedAdminWalletsRouteImport } from './routes/_authenticated/admin.wallets'
+import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
+import { Route as AuthenticatedAdminTransactionsRouteImport } from './routes/_authenticated/admin.transactions'
+import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
+import { Route as AuthenticatedAdminDepositsRouteImport } from './routes/_authenticated/admin.deposits'
+import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin.audit'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -66,12 +75,22 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardIndexRoute =
   AuthenticatedDashboardIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedDashboardWithdrawRoute =
   AuthenticatedDashboardWithdrawRouteImport.update({
     id: '/withdraw',
@@ -120,15 +139,63 @@ const AuthenticatedDashboardAnnouncementsRoute =
     path: '/announcements',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedAdminWithdrawalsRoute =
+  AuthenticatedAdminWithdrawalsRouteImport.update({
+    id: '/withdrawals',
+    path: '/withdrawals',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminWalletsRoute =
+  AuthenticatedAdminWalletsRouteImport.update({
+    id: '/wallets',
+    path: '/wallets',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminTransactionsRoute =
+  AuthenticatedAdminTransactionsRouteImport.update({
+    id: '/transactions',
+    path: '/transactions',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSettingsRoute =
+  AuthenticatedAdminSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminDepositsRoute =
+  AuthenticatedAdminDepositsRouteImport.update({
+    id: '/deposits',
+    path: '/deposits',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminAuditRoute = AuthenticatedAdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/admin/audit': typeof AuthenticatedAdminAuditRoute
+  '/admin/deposits': typeof AuthenticatedAdminDepositsRoute
+  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/transactions': typeof AuthenticatedAdminTransactionsRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/admin/wallets': typeof AuthenticatedAdminWalletsRoute
+  '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/dashboard/announcements': typeof AuthenticatedDashboardAnnouncementsRoute
   '/dashboard/deposit': typeof AuthenticatedDashboardDepositRoute
   '/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
@@ -137,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
   '/dashboard/referrals': typeof AuthenticatedDashboardReferralsRoute
   '/dashboard/withdraw': typeof AuthenticatedDashboardWithdrawRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesByTo {
@@ -146,6 +214,13 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/admin/audit': typeof AuthenticatedAdminAuditRoute
+  '/admin/deposits': typeof AuthenticatedAdminDepositsRoute
+  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/transactions': typeof AuthenticatedAdminTransactionsRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/admin/wallets': typeof AuthenticatedAdminWalletsRoute
+  '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/dashboard/announcements': typeof AuthenticatedDashboardAnnouncementsRoute
   '/dashboard/deposit': typeof AuthenticatedDashboardDepositRoute
   '/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
@@ -154,6 +229,7 @@ export interface FileRoutesByTo {
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
   '/dashboard/referrals': typeof AuthenticatedDashboardReferralsRoute
   '/dashboard/withdraw': typeof AuthenticatedDashboardWithdrawRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRoutesById {
@@ -163,9 +239,17 @@ export interface FileRoutesById {
   '/auth': typeof AuthRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/_authenticated/admin/audit': typeof AuthenticatedAdminAuditRoute
+  '/_authenticated/admin/deposits': typeof AuthenticatedAdminDepositsRoute
+  '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/_authenticated/admin/transactions': typeof AuthenticatedAdminTransactionsRoute
+  '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/admin/wallets': typeof AuthenticatedAdminWalletsRoute
+  '/_authenticated/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/_authenticated/dashboard/announcements': typeof AuthenticatedDashboardAnnouncementsRoute
   '/_authenticated/dashboard/deposit': typeof AuthenticatedDashboardDepositRoute
   '/_authenticated/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
@@ -174,6 +258,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
   '/_authenticated/dashboard/referrals': typeof AuthenticatedDashboardReferralsRoute
   '/_authenticated/dashboard/withdraw': typeof AuthenticatedDashboardWithdrawRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
 }
 export interface FileRouteTypes {
@@ -183,9 +268,17 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/admin'
     | '/dashboard'
     | '/auth/forgot'
     | '/auth/verify'
+    | '/admin/audit'
+    | '/admin/deposits'
+    | '/admin/settings'
+    | '/admin/transactions'
+    | '/admin/users'
+    | '/admin/wallets'
+    | '/admin/withdrawals'
     | '/dashboard/announcements'
     | '/dashboard/deposit'
     | '/dashboard/exchange'
@@ -194,6 +287,7 @@ export interface FileRouteTypes {
     | '/dashboard/profile'
     | '/dashboard/referrals'
     | '/dashboard/withdraw'
+    | '/admin/'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -203,6 +297,13 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/auth/forgot'
     | '/auth/verify'
+    | '/admin/audit'
+    | '/admin/deposits'
+    | '/admin/settings'
+    | '/admin/transactions'
+    | '/admin/users'
+    | '/admin/wallets'
+    | '/admin/withdrawals'
     | '/dashboard/announcements'
     | '/dashboard/deposit'
     | '/dashboard/exchange'
@@ -211,6 +312,7 @@ export interface FileRouteTypes {
     | '/dashboard/profile'
     | '/dashboard/referrals'
     | '/dashboard/withdraw'
+    | '/admin'
     | '/dashboard'
   id:
     | '__root__'
@@ -219,9 +321,17 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/auth/forgot'
     | '/auth/verify'
+    | '/_authenticated/admin/audit'
+    | '/_authenticated/admin/deposits'
+    | '/_authenticated/admin/settings'
+    | '/_authenticated/admin/transactions'
+    | '/_authenticated/admin/users'
+    | '/_authenticated/admin/wallets'
+    | '/_authenticated/admin/withdrawals'
     | '/_authenticated/dashboard/announcements'
     | '/_authenticated/dashboard/deposit'
     | '/_authenticated/dashboard/exchange'
@@ -230,6 +340,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/profile'
     | '/_authenticated/dashboard/referrals'
     | '/_authenticated/dashboard/withdraw'
+    | '/_authenticated/admin/'
     | '/_authenticated/dashboard/'
   fileRoutesById: FileRoutesById
 }
@@ -299,12 +410,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard/': {
       id: '/_authenticated/dashboard/'
       path: '/'
       fullPath: '/dashboard/'
       preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/dashboard/withdraw': {
       id: '/_authenticated/dashboard/withdraw'
@@ -362,8 +487,82 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardAnnouncementsRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/admin/withdrawals': {
+      id: '/_authenticated/admin/withdrawals'
+      path: '/withdrawals'
+      fullPath: '/admin/withdrawals'
+      preLoaderRoute: typeof AuthenticatedAdminWithdrawalsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/wallets': {
+      id: '/_authenticated/admin/wallets'
+      path: '/wallets'
+      fullPath: '/admin/wallets'
+      preLoaderRoute: typeof AuthenticatedAdminWalletsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/users': {
+      id: '/_authenticated/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/transactions': {
+      id: '/_authenticated/admin/transactions'
+      path: '/transactions'
+      fullPath: '/admin/transactions'
+      preLoaderRoute: typeof AuthenticatedAdminTransactionsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/settings': {
+      id: '/_authenticated/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/deposits': {
+      id: '/_authenticated/admin/deposits'
+      path: '/deposits'
+      fullPath: '/admin/deposits'
+      preLoaderRoute: typeof AuthenticatedAdminDepositsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/audit': {
+      id: '/_authenticated/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AuthenticatedAdminAuditRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
+
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAuditRoute: typeof AuthenticatedAdminAuditRoute
+  AuthenticatedAdminDepositsRoute: typeof AuthenticatedAdminDepositsRoute
+  AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
+  AuthenticatedAdminTransactionsRoute: typeof AuthenticatedAdminTransactionsRoute
+  AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedAdminWalletsRoute: typeof AuthenticatedAdminWalletsRoute
+  AuthenticatedAdminWithdrawalsRoute: typeof AuthenticatedAdminWithdrawalsRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAuditRoute: AuthenticatedAdminAuditRoute,
+  AuthenticatedAdminDepositsRoute: AuthenticatedAdminDepositsRoute,
+  AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
+  AuthenticatedAdminTransactionsRoute: AuthenticatedAdminTransactionsRoute,
+  AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedAdminWalletsRoute: AuthenticatedAdminWalletsRoute,
+  AuthenticatedAdminWithdrawalsRoute: AuthenticatedAdminWithdrawalsRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardAnnouncementsRoute: typeof AuthenticatedDashboardAnnouncementsRoute
@@ -398,10 +597,12 @@ const AuthenticatedDashboardRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRouteWithChildren,
 }
 
