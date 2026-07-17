@@ -13,6 +13,12 @@ import {
   History,
   LogOut,
   Home,
+  DollarSign,
+  Bitcoin,
+  Gift,
+  Bell,
+  Users2,
+  KeyRound,
 } from "lucide-react";
 import { Logo } from "@/components/site/Logo";
 import { ThemeProvider } from "@/lib/theme";
@@ -20,6 +26,7 @@ import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useMyPermissions, type Permission } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
@@ -30,7 +37,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
       .from("user_roles")
       .select("role")
       .eq("user_id", uid)
-      .in("role", ["admin", "super_admin"] as any);
+      .in("role", ["admin", "super_admin", "finance", "support", "kyc_officer", "moderator"] as any);
     if (!data || data.length === 0) {
       throw redirect({ to: "/dashboard" });
     }
@@ -38,18 +45,26 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminLayout,
 });
 
-const NAV = [
-  { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
-  { to: "/admin/users", label: "Users", icon: Users, exact: false },
-  { to: "/admin/kyc", label: "KYC Review", icon: ShieldCheck, exact: false },
-  { to: "/admin/deposits", label: "Deposits", icon: ArrowDownLeft, exact: false },
-  { to: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpRight, exact: false },
-  { to: "/admin/transactions", label: "Transactions", icon: ArrowLeftRight, exact: false },
-  { to: "/admin/wallets", label: "Wallets", icon: Wallet, exact: false },
-  { to: "/admin/announcements", label: "Announcements", icon: Megaphone, exact: false },
-  { to: "/admin/settings", label: "Settings", icon: SettingsIcon, exact: false },
-  { to: "/admin/audit", label: "Audit Logs", icon: History, exact: false },
-] as const;
+type NavItem = { to: string; label: string; icon: any; exact?: boolean; perm: Permission };
+
+const NAV: NavItem[] = [
+  { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true, perm: "view_admin" },
+  { to: "/admin/users", label: "Users", icon: Users, perm: "manage_users" },
+  { to: "/admin/roles", label: "Roles", icon: KeyRound, perm: "manage_roles" },
+  { to: "/admin/kyc", label: "KYC Review", icon: ShieldCheck, perm: "review_kyc" },
+  { to: "/admin/rates", label: "Rates", icon: DollarSign, perm: "manage_rates" },
+  { to: "/admin/exchange", label: "Crypto Orders", icon: Bitcoin, perm: "manage_transactions" },
+  { to: "/admin/giftcards", label: "Gift Cards", icon: Gift, perm: "manage_transactions" },
+  { to: "/admin/deposits", label: "Deposits", icon: ArrowDownLeft, perm: "manage_deposits" },
+  { to: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpRight, perm: "manage_withdrawals" },
+  { to: "/admin/transactions", label: "Transactions", icon: ArrowLeftRight, perm: "manage_transactions" },
+  { to: "/admin/wallets", label: "Wallets", icon: Wallet, perm: "manage_wallets" },
+  { to: "/admin/referrals", label: "Referrals", icon: Users2, perm: "manage_referrals" },
+  { to: "/admin/notifications", label: "Notifications", icon: Bell, perm: "send_notifications" },
+  { to: "/admin/announcements", label: "Announcements", icon: Megaphone, perm: "manage_announcements" },
+  { to: "/admin/settings", label: "Settings", icon: SettingsIcon, perm: "manage_settings" },
+  { to: "/admin/audit", label: "Audit Logs", icon: History, perm: "view_audit" },
+];
 
 function AdminLayout() {
   return (
@@ -62,6 +77,9 @@ function AdminLayout() {
 function Inner() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { permissions } = useMyPermissions();
+  const visible = NAV.filter((n) => permissions.has(n.perm));
+
   async function signOut() {
     await qc.cancelQueries();
     qc.clear();
@@ -78,8 +96,8 @@ function Inner() {
             Admin
           </span>
         </div>
-        <nav className="mt-8 flex flex-1 flex-col gap-1">
-          {NAV.map((item) => (
+        <nav className="mt-8 flex flex-1 flex-col gap-1 overflow-y-auto">
+          {visible.map((item) => (
             <Link
               key={item.to}
               to={item.to}
@@ -120,10 +138,9 @@ function Inner() {
             <ThemeToggle />
           </div>
         </header>
-        {/* mobile top nav */}
         <div className="border-b border-border bg-card md:hidden">
           <div className="scrollbar-none flex gap-1 overflow-x-auto px-2 py-2">
-            {NAV.map((item) => (
+            {visible.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
