@@ -124,6 +124,51 @@ export type Database = {
         }
         Relationships: []
       }
+      crypto_rates: {
+        Row: {
+          buy_rate: number
+          change_24h: number
+          created_at: string
+          id: string
+          is_active: boolean
+          min_amount: number
+          name: string
+          network: string
+          sell_rate: number
+          symbol: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          buy_rate?: number
+          change_24h?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          min_amount?: number
+          name: string
+          network?: string
+          sell_rate?: number
+          symbol: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          buy_rate?: number
+          change_24h?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          min_amount?: number
+          name?: string
+          network?: string
+          sell_rate?: number
+          symbol?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       deposit_requests: {
         Row: {
           amount: number
@@ -176,6 +221,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      giftcard_rates: {
+        Row: {
+          brand: string
+          buy_rate: number
+          card_type: string
+          category: string
+          created_at: string
+          currency: string
+          id: string
+          is_active: boolean
+          min_amount: number
+          sell_rate: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          brand: string
+          buy_rate?: number
+          card_type?: string
+          category?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          min_amount?: number
+          sell_rate?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          brand?: string
+          buy_rate?: number
+          card_type?: string
+          category?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          min_amount?: number
+          sell_rate?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       kyc_submissions: {
         Row: {
@@ -379,8 +469,12 @@ export type Database = {
           category: string
           created_at: string
           id: string
+          proof_path: string | null
           quantity: number | null
           reference: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_notes: string | null
           stage: string
           status: string
           type: string
@@ -392,8 +486,12 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          proof_path?: string | null
           quantity?: number | null
           reference?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
           stage?: string
           status?: string
           type?: string
@@ -405,8 +503,12 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          proof_path?: string | null
           quantity?: number | null
           reference?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
           stage?: string
           status?: string
           type?: string
@@ -522,6 +624,13 @@ export type Database = {
       }
     }
     Functions: {
+      has_any_role: {
+        Args: {
+          _roles: Database["public"]["Enums"]["app_role"][]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

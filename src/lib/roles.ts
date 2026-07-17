@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+const STAFF_ROLES = ["admin", "super_admin", "finance", "support", "kyc_officer", "moderator"];
+
 export function useIsAdmin() {
   return useQuery({
     queryKey: ["is-admin"],
@@ -12,10 +14,9 @@ export function useIsAdmin() {
         .from("user_roles")
         .select("role")
         .eq("user_id", uid)
-        .eq("role", "admin")
-        .maybeSingle();
+        .in("role", STAFF_ROLES as any);
       if (error) return false;
-      return !!data;
+      return (data ?? []).length > 0;
     },
   });
 }
