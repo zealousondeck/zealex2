@@ -40,7 +40,7 @@ export function useCryptoRates() {
         .select("*")
         .order("symbol");
       if (error) throw error;
-      return (data ?? []) as CryptoRate[];
+      return (data ?? []) as unknown as CryptoRate[];
     },
   });
 }
@@ -54,7 +54,7 @@ export function useGiftcardRates() {
         .select("*")
         .order("brand");
       if (error) throw error;
-      return (data ?? []) as GiftcardRate[];
+      return (data ?? []) as unknown as GiftcardRate[];
     },
   });
 }
