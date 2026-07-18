@@ -412,11 +412,12 @@ export function useUpdateTransactionStatus() {
       note,
     }: {
       id: string;
-      status: "completed" | "rejected" | "pending";
+      status: "pending" | "processing" | "completed" | "rejected" | "cancelled";
       stage: string;
       userId: string;
       amount: number;
       note?: string;
+
     }) => {
       const { error } = await supabase
         .from("transactions")

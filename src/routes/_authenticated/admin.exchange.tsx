@@ -16,9 +16,14 @@ export const Route = createFileRoute("/_authenticated/admin/exchange")({
 
 const STATUS_TONE: Record<string, string> = {
   pending: "bg-gold-soft text-foreground",
+  processing: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
   completed: "bg-success/10 text-success",
   rejected: "bg-destructive/10 text-destructive",
+  cancelled: "bg-muted text-muted-foreground",
 };
+
+const STATUS_FILTERS = ["pending", "processing", "completed", "rejected", "cancelled", "all"] as const;
+
 
 export function TradeConsole({ category, title }: { category: "crypto" | "giftcard"; title: string }) {
   const { allowed } = useHasPermission("manage_transactions");
@@ -48,14 +53,17 @@ export function TradeConsole({ category, title }: { category: "crypto" | "giftca
     }
   }
 
-  async function decide(s: "completed" | "rejected") {
+  async function decide(s: "processing" | "completed" | "rejected" | "cancelled") {
     if (!selected) return;
-    if (s === "rejected" && !notes.trim()) return toast.error("Reviewer note required");
+    if ((s === "rejected" || s === "cancelled") && !notes.trim())
+      return toast.error("Reviewer note required");
+    const stage =
+      s === "completed" ? "paid" : s === "processing" ? "under_review" : s === "cancelled" ? "cancelled" : "under_review";
     try {
       await mut.mutateAsync({
         id: selected.id,
         status: s,
-        stage: s === "completed" ? "paid" : "under_review",
+        stage,
         userId: selected.user_id,
         amount: Number(selected.amount),
         note: notes,
@@ -72,6 +80,7 @@ export function TradeConsole({ category, title }: { category: "crypto" | "giftca
     }
   }
 
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -80,7 +89,7 @@ export function TradeConsole({ category, title }: { category: "crypto" | "giftca
           <p className="text-sm text-muted-foreground">Review, approve or reject with notes.</p>
         </div>
         <div className="flex gap-1 rounded-xl border border-border bg-card p-1">
-          {["pending", "completed", "rejected", "all"].map((s) => (
+          {STATUS_FILTERS.map((s) => (
             <button
               key={s}
               onClick={() => setStatus(s)}
@@ -168,11 +177,16 @@ export function TradeConsole({ category, title }: { category: "crypto" | "giftca
                 <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Note visible in audit log; required for rejection." />
               </div>
 
-              {selected.status === "pending" && (
-                <div className="flex justify-end gap-2">
+              {(selected.status === "pending" || selected.status === "processing") && (
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button variant="outline" onClick={() => decide("cancelled")}>Cancel</Button>
                   <Button variant="outline" onClick={() => decide("rejected")}>Reject</Button>
+                  {selected.status === "pending" && (
+                    <Button variant="secondary" onClick={() => decide("processing")}>Mark processing</Button>
+                  )}
                   <Button variant="gold" onClick={() => decide("completed")}>Approve & Complete</Button>
                 </div>
+
               )}
             </div>
           )}

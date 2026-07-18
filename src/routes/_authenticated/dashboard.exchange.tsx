@@ -100,8 +100,10 @@ function ExchangePage() {
         const { data: wallet } = await supabase
           .from("wallets")
           .select("id, balance")
-          .limit(1)
+          .eq("user_id", uid)
+          .eq("currency", "NGN")
           .maybeSingle();
+
         if (wallet) {
           await supabase
             .from("wallets")
