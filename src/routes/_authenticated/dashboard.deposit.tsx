@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { nairaFormatter } from "@/lib/market-data";
 import { ReceiptActions } from "@/components/dashboard/ReceiptActions";
 import type { PaymentMethod } from "@/lib/payment-methods";
+import { PaystackButton } from "@/components/dashboard/PaystackButton";
 
 export const Route = createFileRoute("/_authenticated/dashboard/deposit")({
   component: DepositPage,
@@ -108,7 +109,32 @@ function DepositPage() {
         </div>
       </div>
 
+      <div className="space-y-4 rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/5 to-transparent p-5">
+        <div>
+          <h2 className="text-base font-bold">Instant deposit</h2>
+          <p className="text-xs text-muted-foreground">Pay with card, bank transfer, or USSD via Paystack. Your wallet is credited automatically.</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="pstk-amt">Amount (NGN)</Label>
+          <Input id="pstk-amt" type="number" min="0" step="any" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />
+        </div>
+        <PaystackButton
+          amount={Number(amount) || 0}
+          onSuccess={() => {
+            setAmount("");
+            queryClient.invalidateQueries({ queryKey: ["deposits"] });
+            queryClient.invalidateQueries({ queryKey: ["wallet"] });
+            queryClient.invalidateQueries({ queryKey: ["notifications"] });
+            queryClient.invalidateQueries({ queryKey: ["transactions"] });
+          }}
+        />
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-border bg-card p-5">
+        <div>
+          <h2 className="text-base font-bold">Manual bank deposit</h2>
+          <p className="text-xs text-muted-foreground">Submit proof — an admin will review and credit your wallet.</p>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="amt">Amount (NGN)</Label>
           <Input id="amt" type="number" min="0" step="any" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" />

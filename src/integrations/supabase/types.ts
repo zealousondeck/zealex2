@@ -638,6 +638,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      paystack_credit_deposit: {
+        Args: { _amount: number; _reference: string; _user_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role:
