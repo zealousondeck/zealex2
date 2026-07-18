@@ -16,9 +16,14 @@ export const Route = createFileRoute("/_authenticated/admin/exchange")({
 
 const STATUS_TONE: Record<string, string> = {
   pending: "bg-gold-soft text-foreground",
+  processing: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
   completed: "bg-success/10 text-success",
   rejected: "bg-destructive/10 text-destructive",
+  cancelled: "bg-muted text-muted-foreground",
 };
+
+const STATUS_FILTERS = ["pending", "processing", "completed", "rejected", "cancelled", "all"] as const;
+
 
 export function TradeConsole({ category, title }: { category: "crypto" | "giftcard"; title: string }) {
   const { allowed } = useHasPermission("manage_transactions");
