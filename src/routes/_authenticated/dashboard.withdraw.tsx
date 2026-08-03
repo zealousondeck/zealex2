@@ -282,7 +282,7 @@ function WithdrawPage() {
             type="checkbox"
             checked={saveMethod}
             onChange={(e) => setSaveMethod(e.target.checked)}
-            className="h-4 w-4 accent-[hsl(var(--gold,45_90%_50%))]"
+            className="h-4 w-4 accent-[var(--gold)]"
           />
           Save this account for faster withdrawals
         </label>
