@@ -27,6 +27,7 @@ import { Route as AuthenticatedDashboardNotificationsRouteImport } from './route
 import { Route as AuthenticatedDashboardKycRouteImport } from './routes/_authenticated/dashboard.kyc'
 import { Route as AuthenticatedDashboardExchangeRouteImport } from './routes/_authenticated/dashboard.exchange'
 import { Route as AuthenticatedDashboardDepositRouteImport } from './routes/_authenticated/dashboard.deposit'
+import { Route as AuthenticatedDashboardCryptoRouteImport } from './routes/_authenticated/dashboard.crypto'
 import { Route as AuthenticatedDashboardAnnouncementsRouteImport } from './routes/_authenticated/dashboard.announcements'
 import { Route as AuthenticatedAdminWithdrawalsRouteImport } from './routes/_authenticated/admin.withdrawals'
 import { Route as AuthenticatedAdminWalletsRouteImport } from './routes/_authenticated/admin.wallets'
@@ -139,6 +140,12 @@ const AuthenticatedDashboardDepositRoute =
   AuthenticatedDashboardDepositRouteImport.update({
     id: '/deposit',
     path: '/deposit',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardCryptoRoute =
+  AuthenticatedDashboardCryptoRouteImport.update({
+    id: '/crypto',
+    path: '/crypto',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
 const AuthenticatedDashboardAnnouncementsRoute =
@@ -258,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/admin/wallets': typeof AuthenticatedAdminWalletsRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/dashboard/announcements': typeof AuthenticatedDashboardAnnouncementsRoute
+  '/dashboard/crypto': typeof AuthenticatedDashboardCryptoRoute
   '/dashboard/deposit': typeof AuthenticatedDashboardDepositRoute
   '/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
   '/dashboard/kyc': typeof AuthenticatedDashboardKycRoute
@@ -291,6 +299,7 @@ export interface FileRoutesByTo {
   '/admin/wallets': typeof AuthenticatedAdminWalletsRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/dashboard/announcements': typeof AuthenticatedDashboardAnnouncementsRoute
+  '/dashboard/crypto': typeof AuthenticatedDashboardCryptoRoute
   '/dashboard/deposit': typeof AuthenticatedDashboardDepositRoute
   '/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
   '/dashboard/kyc': typeof AuthenticatedDashboardKycRoute
@@ -328,6 +337,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/wallets': typeof AuthenticatedAdminWalletsRoute
   '/_authenticated/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/_authenticated/dashboard/announcements': typeof AuthenticatedDashboardAnnouncementsRoute
+  '/_authenticated/dashboard/crypto': typeof AuthenticatedDashboardCryptoRoute
   '/_authenticated/dashboard/deposit': typeof AuthenticatedDashboardDepositRoute
   '/_authenticated/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
   '/_authenticated/dashboard/kyc': typeof AuthenticatedDashboardKycRoute
@@ -365,6 +375,7 @@ export interface FileRouteTypes {
     | '/admin/wallets'
     | '/admin/withdrawals'
     | '/dashboard/announcements'
+    | '/dashboard/crypto'
     | '/dashboard/deposit'
     | '/dashboard/exchange'
     | '/dashboard/kyc'
@@ -398,6 +409,7 @@ export interface FileRouteTypes {
     | '/admin/wallets'
     | '/admin/withdrawals'
     | '/dashboard/announcements'
+    | '/dashboard/crypto'
     | '/dashboard/deposit'
     | '/dashboard/exchange'
     | '/dashboard/kyc'
@@ -434,6 +446,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/wallets'
     | '/_authenticated/admin/withdrawals'
     | '/_authenticated/dashboard/announcements'
+    | '/_authenticated/dashboard/crypto'
     | '/_authenticated/dashboard/deposit'
     | '/_authenticated/dashboard/exchange'
     | '/_authenticated/dashboard/kyc'
@@ -579,6 +592,13 @@ declare module '@tanstack/react-router' {
       path: '/deposit'
       fullPath: '/dashboard/deposit'
       preLoaderRoute: typeof AuthenticatedDashboardDepositRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/crypto': {
+      id: '/_authenticated/dashboard/crypto'
+      path: '/crypto'
+      fullPath: '/dashboard/crypto'
+      preLoaderRoute: typeof AuthenticatedDashboardCryptoRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
     '/_authenticated/dashboard/announcements': {
@@ -739,6 +759,7 @@ const AuthenticatedAdminRouteWithChildren =
 
 interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardAnnouncementsRoute: typeof AuthenticatedDashboardAnnouncementsRoute
+  AuthenticatedDashboardCryptoRoute: typeof AuthenticatedDashboardCryptoRoute
   AuthenticatedDashboardDepositRoute: typeof AuthenticatedDashboardDepositRoute
   AuthenticatedDashboardExchangeRoute: typeof AuthenticatedDashboardExchangeRoute
   AuthenticatedDashboardKycRoute: typeof AuthenticatedDashboardKycRoute
@@ -753,6 +774,7 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
   {
     AuthenticatedDashboardAnnouncementsRoute:
       AuthenticatedDashboardAnnouncementsRoute,
+    AuthenticatedDashboardCryptoRoute: AuthenticatedDashboardCryptoRoute,
     AuthenticatedDashboardDepositRoute: AuthenticatedDashboardDepositRoute,
     AuthenticatedDashboardExchangeRoute: AuthenticatedDashboardExchangeRoute,
     AuthenticatedDashboardKycRoute: AuthenticatedDashboardKycRoute,

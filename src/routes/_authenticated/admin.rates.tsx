@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useHasPermission } from "@/lib/permissions";
+import { CryptoMarginPanel } from "@/components/admin/CryptoMarginPanel";
+
 
 export const Route = createFileRoute("/_authenticated/admin/rates")({
   component: RatesPage,
@@ -37,6 +39,7 @@ function RatesPage() {
         <TabsList>
           <TabsTrigger value="crypto">Crypto</TabsTrigger>
           <TabsTrigger value="giftcard">Gift Cards</TabsTrigger>
+          <TabsTrigger value="margins">Crypto Margins</TabsTrigger>
         </TabsList>
         <TabsContent value="crypto" className="mt-4">
           <CryptoRatesTable />
@@ -44,7 +47,11 @@ function RatesPage() {
         <TabsContent value="giftcard" className="mt-4">
           <GiftcardRatesTable />
         </TabsContent>
+        <TabsContent value="margins" className="mt-4">
+          <CryptoMarginPanel />
+        </TabsContent>
       </Tabs>
+
     </div>
   );
 }

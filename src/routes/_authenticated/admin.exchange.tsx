@@ -67,7 +67,9 @@ export function TradeConsole({ category, title }: { category: "crypto" | "giftca
         userId: selected.user_id,
         amount: Number(selected.amount),
         note: notes,
+        credit: selected.type === "sell",
       });
+
       // persist reviewer note & reviewer_at
       await supabase
         .from("transactions")
