@@ -410,6 +410,7 @@ export function useUpdateTransactionStatus() {
       userId,
       amount,
       note,
+      credit,
     }: {
       id: string;
       status: "pending" | "processing" | "completed" | "rejected" | "cancelled";
@@ -417,24 +418,49 @@ export function useUpdateTransactionStatus() {
       userId: string;
       amount: number;
       note?: string;
-
+      /** Credit the user's NGN wallet when the order is completed (crypto/gift card sells). */
+      credit?: boolean;
     }) => {
       const { error } = await supabase
         .from("transactions")
         .update({ status, stage })
         .eq("id", id);
       if (error) throw error;
+
+      let credited = false;
+      if (credit && status === "completed" && amount > 0) {
+        const { data: wallet } = await supabase
+          .from("wallets")
+          .select("id, balance")
+          .eq("user_id", userId)
+          .eq("currency", "NGN")
+          .maybeSingle();
+        if (wallet) {
+          const { error: wErr } = await supabase
+            .from("wallets")
+            .update({ balance: Number(wallet.balance) + amount, updated_at: new Date().toISOString() })
+            .eq("id", wallet.id);
+          if (wErr) throw wErr;
+          credited = true;
+          await logAudit("wallet.credit", "wallets", wallet.id, { amount, source: "transaction", id });
+        }
+      }
+
       await supabase.from("notifications").insert({
         user_id: userId,
         title: `Trade ${status}`,
-        body: `Trade of ₦${amount.toLocaleString()} was ${status}.${note ? " " + note : ""}`,
+        body:
+          `Trade of ₦${amount.toLocaleString()} was ${status}.` +
+          (credited ? " Your wallet has been credited." : "") +
+          (note ? " " + note : ""),
         category: "trade",
       });
-      await logAudit("transaction." + status, "transactions", id, { amount, note });
+      await logAudit("transaction." + status, "transactions", id, { amount, note, credited });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin"] }),
   });
 }
+
 
 export function useSetProfileStatus() {
   const qc = useQueryClient();
