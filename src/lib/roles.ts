@@ -13,10 +13,9 @@ export function useIsAdmin() {
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", uid)
-        .in("role", STAFF_ROLES as any);
+        .eq("user_id", uid);
       if (error) return false;
-      return (data ?? []).length > 0;
+      return (data ?? []).some((r) => STAFF_ROLES.includes(String(r.role)));
     },
   });
 }

@@ -33,12 +33,9 @@ export const Route = createFileRoute("/_authenticated/admin")({
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData.user?.id;
     if (!uid) throw redirect({ to: "/auth" });
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", uid)
-      .in("role", ["admin", "super_admin", "finance", "support", "kyc_officer", "moderator"] as any);
-    if (!data || data.length === 0) {
+    const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid);
+    const staff = ["admin", "super_admin", "finance", "support", "kyc_officer", "moderator"];
+    if (!data || !data.some((r) => staff.includes(String(r.role)))) {
       throw redirect({ to: "/dashboard" });
     }
   },
