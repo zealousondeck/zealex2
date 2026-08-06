@@ -110,7 +110,7 @@ function WithdrawPage() {
           bankCode,
           bankName,
           accountNumber,
-          accountName: accountName ?? manualName.trim() || undefined,
+          accountName: (accountName ?? manualName.trim()) || undefined,
           note: note || undefined,
           saveMethod,
         },
