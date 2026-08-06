@@ -42,6 +42,8 @@ function WithdrawPage() {
   const [accountNumber, setAccountNumber] = useState("");
   const [accountName, setAccountName] = useState<string | null>(null);
   const [resolveError, setResolveError] = useState<string | null>(null);
+  const [manualName, setManualName] = useState("");
+  const [manualMode, setManualMode] = useState(false);
   const [saveMethod, setSaveMethod] = useState(true);
   const [done, setDone] = useState(false);
 
@@ -71,11 +73,19 @@ function WithdrawPage() {
   const resolveMut = useMutation({
     mutationFn: () => resolveFn({ data: { accountNumber, bankCode } }),
     onSuccess: (r) => {
-      setAccountName(r.accountName);
-      setResolveError(null);
+      if (r.verified) {
+        setAccountName(r.accountName);
+        setResolveError(null);
+        setManualMode(false);
+      } else {
+        setAccountName(null);
+        setResolveError(r.reason);
+        setManualMode(r.unavailable);
+      }
     },
     onError: (e) => {
       setAccountName(null);
+      setManualMode(false);
       setResolveError(e instanceof Error ? e.message : "Could not verify that account");
     },
   });
@@ -84,6 +94,8 @@ function WithdrawPage() {
   useEffect(() => {
     setAccountName(null);
     setResolveError(null);
+    setManualMode(false);
+    setManualName("");
     if (!bankCode || !/^\d{10}$/.test(accountNumber)) return;
     const t = setTimeout(() => resolveMut.mutate(), 350);
     return () => clearTimeout(t);
@@ -98,6 +110,7 @@ function WithdrawPage() {
           bankCode,
           bankName,
           accountNumber,
+          accountName: accountName ?? manualName.trim() || undefined,
           note: note || undefined,
           saveMethod,
         },
@@ -118,15 +131,21 @@ function WithdrawPage() {
   });
 
   const overBalance = amountNumber > balance;
+  const confirmedName = accountName ?? (manualMode ? manualName.trim() : "");
   const canSubmit =
-    amountNumber > 0 && !overBalance && !!bankCode && !!accountName && !submitMut.isPending;
+    amountNumber > 0 &&
+    !overBalance &&
+    !!bankCode &&
+    /^\d{10}$/.test(accountNumber) &&
+    confirmedName.length > 1 &&
+    !submitMut.isPending;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!amountNumber) return toast.error("Enter a valid amount");
     if (overBalance) return toast.error("Amount exceeds your wallet balance");
     if (!bankCode) return toast.error("Select your bank");
-    if (!accountName) return toast.error("Verify your account number first");
+    if (!confirmedName) return toast.error("Verify or enter your account name first");
     submitMut.mutate();
   }
 
@@ -231,7 +250,9 @@ function WithdrawPage() {
             </span>
           ) : resolveError ? (
             <span className="flex items-center justify-between gap-2">
-              <span className="text-destructive">{resolveError}</span>
+              <span className={manualMode ? "text-muted-foreground" : "text-destructive"}>
+                {resolveError}
+              </span>
               <Button
                 type="button"
                 size="sm"
@@ -248,6 +269,19 @@ function WithdrawPage() {
             </span>
           )}
         </div>
+
+        {manualMode && !accountName && (
+          <div className="space-y-2">
+            <Label htmlFor="manual-name">Account name</Label>
+            <Input
+              id="manual-name"
+              value={manualName}
+              onChange={(e) => setManualName(e.target.value)}
+              placeholder="Name exactly as it appears on the account"
+              maxLength={120}
+            />
+          </div>
+        )}
 
         {savedMethods.filter((m) => m.method_type === "bank").length > 0 && (
           <div className="space-y-2">

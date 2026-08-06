@@ -17,7 +17,7 @@ const verifySchema = z.object({
 /** Authenticated: verify a Paystack reference and atomically credit the wallet. */
 export const verifyPaystackPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => verifySchema.parse(data))
+  .validator((data: unknown) => verifySchema.parse(data))
   .handler(async ({ data, context }) => {
     const secret = process.env.PAYSTACK_SECRET_KEY;
     if (!secret) throw new Error("Paystack is not configured");
