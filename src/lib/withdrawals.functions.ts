@@ -16,14 +16,17 @@ const resolveSchema = z.object({
 /** Authenticated: resolve an account number to its registered account name. */
 export const resolveBankAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => resolveSchema.parse(data))
+  .validator((data: unknown) => resolveSchema.parse(data))
   .handler(async ({ data }) => resolveNubanAccount(data.accountNumber, data.bankCode));
+
+/** Name shown on the request when Paystack could not confirm it automatically. */
 
 const withdrawSchema = z.object({
   amount: z.number().positive().max(100_000_000),
   bankCode: z.string().min(2).max(10),
   bankName: z.string().min(2).max(80),
   accountNumber: z.string().regex(/^\d{10}$/),
+  accountName: z.string().min(2).max(120).optional(),
   note: z.string().max(200).optional(),
   saveMethod: z.boolean().optional(),
 });
@@ -34,12 +37,20 @@ const withdrawSchema = z.object({
  */
 export const submitWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => withdrawSchema.parse(data))
+  .validator((data: unknown) => withdrawSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
     // Re-verify the destination server-side so a tampered client can't fake it.
-    const resolved = await resolveNubanAccount(data.accountNumber, data.bankCode);
+    // If Paystack cannot resolve names on this account, fall back to the name
+    // the user confirmed instead of blocking the withdrawal.
+    const resolution = await resolveNubanAccount(data.accountNumber, data.bankCode);
+    if (!resolution.verified && !resolution.unavailable) throw new Error(resolution.reason);
+    const accountName = resolution.verified
+      ? resolution.accountName
+      : (data.accountName ?? "").trim();
+    if (!accountName) throw new Error("Enter the account name for this bank account");
+    const resolved = { accountName };
 
     const { data: wallet, error: walletErr } = await supabase
       .from("wallets")
