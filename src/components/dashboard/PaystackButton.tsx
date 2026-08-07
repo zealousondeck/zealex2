@@ -45,6 +45,37 @@ function loadScript(): Promise<void> {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Pending references survive reloads so a refresh mid-payment resumes
+ * verification instead of losing the deposit. The server RPC keys on the
+ * Paystack reference, so replaying verification can never credit twice.
+ */
+const PENDING_KEY = "zealex.paystack.pending";
+
+type PendingPayment = { reference: string; amount: number };
+
+function readPending(): PendingPayment | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(PENDING_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PendingPayment;
+    return parsed?.reference ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePending(value: PendingPayment | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (value) window.localStorage.setItem(PENDING_KEY, JSON.stringify(value));
+    else window.localStorage.removeItem(PENDING_KEY);
+  } catch {
+    /* storage unavailable — verification still works in-session */
+  }
+}
+
 export function PaystackButton({
   amount,
   onSuccess,
@@ -58,8 +89,9 @@ export function PaystackButton({
   const [phase, setPhase] = useState<"idle" | "checkout" | "verifying" | "done">("idle");
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [keyError, setKeyError] = useState(false);
-  const [pendingRef, setPendingRef] = useState<string | null>(null);
+  const [pending, setPending] = useState<PendingPayment | null>(null);
   const mounted = useRef(true);
+  const verifying = useRef(false);
   const fetchKey = useServerFn(getPaystackPublicKey);
   const verify = useServerFn(verifyPaystackPayment);
 
@@ -87,32 +119,51 @@ export function PaystackButton({
   /** Verify with retries — Paystack settles a moment after the popup closes. */
   const runVerification = useCallback(
     async (reference: string, expected: number) => {
-      setPendingRef(reference);
+      // Guard against overlapping verifications (double clicks, retries,
+      // resume-on-mount racing the callback).
+      if (verifying.current) return false;
+      verifying.current = true;
+      const record = { reference, amount: expected };
+      setPending(record);
+      writePending(record);
       setPhase("verifying");
       let lastError = "Verification failed";
-      for (let attempt = 0; attempt < 4; attempt++) {
-        try {
-          const res = await verify({ data: { reference, expectedAmount: expected } });
-          if (!mounted.current) return true;
-          setPendingRef(null);
-          setPhase("done");
-          if (res.duplicate) toast.info("This payment was already credited");
-          else toast.success("Deposit credited to your wallet");
-          onSuccess?.();
-          setTimeout(() => mounted.current && setPhase("idle"), 2500);
-          return true;
-        } catch (err) {
-          lastError = err instanceof Error ? err.message : lastError;
-          if (attempt < 3) await sleep(1200 * (attempt + 1));
+      try {
+        for (let attempt = 0; attempt < 4; attempt++) {
+          try {
+            const res = await verify({ data: { reference, expectedAmount: expected } });
+            writePending(null);
+            if (!mounted.current) return true;
+            setPending(null);
+            setPhase("done");
+            if (res.duplicate) toast.info("This payment was already credited");
+            else toast.success("Deposit credited to your wallet");
+            onSuccess?.();
+            setTimeout(() => mounted.current && setPhase("idle"), 2500);
+            return true;
+          } catch (err) {
+            lastError = err instanceof Error ? err.message : lastError;
+            if (attempt < 3) await sleep(1200 * (attempt + 1));
+          }
         }
+        if (!mounted.current) return false;
+        setPhase("idle");
+        toast.error(`${lastError}. You can retry the verification below.`);
+        return false;
+      } finally {
+        verifying.current = false;
       }
-      if (!mounted.current) return false;
-      setPhase("idle");
-      toast.error(`${lastError}. You can retry the verification below.`);
-      return false;
     },
     [verify, onSuccess],
   );
+
+  // Resume an interrupted verification after a reload.
+  useEffect(() => {
+    const stored = readPending();
+    if (!stored) return;
+    setPending(stored);
+    void runVerification(stored.reference, stored.amount);
+  }, [runVerification]);
 
   const pay = useCallback(async () => {
     if (!amount || amount <= 0) return toast.error("Enter a valid amount");
@@ -127,6 +178,7 @@ export function PaystackButton({
       if (!window.PaystackPop) throw new Error("Paystack could not be loaded");
 
       const reference = `pstk_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+      const amountAtCheckout = amount;
       // Paystack's callback runs inside its iframe context — capture the
       // reference synchronously and do all async work after the popup closes.
       const outcome = await new Promise<{ reference: string } | null>((resolve) => {
@@ -153,7 +205,9 @@ export function PaystackButton({
         toast.info("Payment cancelled");
         return;
       }
-      await runVerification(outcome.reference, amount);
+      // Persist before verifying so a refresh mid-verification resumes.
+      writePending({ reference: outcome.reference, amount: amountAtCheckout });
+      await runVerification(outcome.reference, amountAtCheckout);
     } catch (err) {
       setPhase("idle");
       toast.error(err instanceof Error ? err.message : "Payment could not start");
@@ -196,13 +250,13 @@ export function PaystackButton({
             : `Pay ₦${amount ? amount.toLocaleString() : "0"} with Paystack`}
       </Button>
 
-      {pendingRef && phase !== "verifying" && (
+      {pending && phase !== "verifying" && (
         <Button
           type="button"
           variant="outline"
           size="sm"
           className="w-full"
-          onClick={() => runVerification(pendingRef, amount)}
+          onClick={() => runVerification(pending.reference, pending.amount)}
         >
           <RefreshCw className="mr-2 h-4 w-4" /> Retry verification
         </Button>
