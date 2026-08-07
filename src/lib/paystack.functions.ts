@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /** Public: expose the Paystack publishable key to the browser. */
 export const getPaystackPublicKey = createServerFn({ method: "GET" }).handler(async () => {
-  const key = process.env.PAYSTACK_PUBLIC_KEY;
+  const key = (process.env["PAYSTACK_PUBLIC_KEY"] ?? "").replace(/\s+/g, "");
   if (!key) throw new Error("Paystack is not configured");
   return { publicKey: key };
 });
