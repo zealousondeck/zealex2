@@ -9,8 +9,13 @@ export type ResolveResult =
 function secret() {
   // Trim: pasted keys often carry stray whitespace/newlines, which Paystack
   // rejects with a bare "Invalid key".
-  const key = (process.env["PAYSTACK_SECRET_KEY"] ?? "").trim();
+  const key = (process.env["PAYSTACK_SECRET_KEY"] ?? "").replace(/\s+/g, "");
   if (!key) throw new Error("Bank verification is not configured");
+  if (key.startsWith("pk_")) {
+    // A publishable key in the secret slot is the most common cause of the
+    // provider's opaque "Invalid key" response.
+    throw new Error("Bank verification is misconfigured on the server");
+  }
   return key;
 }
 
