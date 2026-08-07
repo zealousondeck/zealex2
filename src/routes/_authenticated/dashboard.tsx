@@ -13,7 +13,8 @@ import {
   Megaphone,
   LayoutDashboard,
   Bitcoin,
-
+  Gift,
+  History,
 } from "lucide-react";
 import { Logo } from "@/components/site/Logo";
 import { BottomNav } from "@/components/dashboard/BottomNav";
@@ -32,9 +33,6 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 const navItems = [
   { to: "/dashboard", label: "Wallet", icon: Wallet, exact: true },
-  { to: "/dashboard/exchange", label: "Exchange", icon: ArrowLeftRight, exact: false },
-  { to: "/dashboard/crypto", label: "Sell Crypto", icon: Bitcoin, exact: false },
-
   { to: "/dashboard/deposit", label: "Deposit", icon: ArrowDownLeft, exact: false },
   { to: "/dashboard/withdraw", label: "Withdraw", icon: ArrowUpRight, exact: false },
   { to: "/dashboard/kyc", label: "Verification", icon: ShieldCheck, exact: false },
@@ -43,6 +41,21 @@ const navItems = [
   { to: "/dashboard/notifications", label: "Notifications", icon: Bell, exact: false },
   { to: "/dashboard/profile", label: "Profile", icon: User, exact: false },
 ] as const;
+
+const exchangeGroup = {
+  label: "Exchange",
+  icon: ArrowLeftRight,
+  items: [
+    { to: "/dashboard/crypto", label: "Crypto Exchange", icon: Bitcoin, search: undefined },
+    {
+      to: "/dashboard/exchange",
+      label: "Gift Card Exchange",
+      icon: Gift,
+      search: { tab: "giftcard" as const },
+    },
+    { to: "/dashboard/exchange-history", label: "Exchange History", icon: History, search: undefined },
+  ],
+} as const;
 
 function DashboardLayout() {
   return (
@@ -76,6 +89,26 @@ function DashboardInner() {
           <Logo />
         </div>
         <nav className="mt-8 flex flex-1 flex-col gap-1">
+          <div className="mt-1">
+            <p className="flex items-center gap-3 px-3 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              <exchangeGroup.icon className="h-4 w-4" />
+              {exchangeGroup.label}
+            </p>
+            <div className="ml-4 flex flex-col gap-1 border-l border-border pl-2">
+              {exchangeGroup.items.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  search={item.search as never}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  activeProps={{ className: "bg-gold-soft text-foreground" }}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </div>
           {navItems.map((item) => (
             <Link
               key={item.to}
