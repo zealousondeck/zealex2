@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /** Public: expose the Paystack publishable key to the browser. */
 export const getPaystackPublicKey = createServerFn({ method: "GET" }).handler(async () => {
-  const key = process.env.PAYSTACK_PUBLIC_KEY;
+  const key = (process.env["PAYSTACK_PUBLIC_KEY"] ?? "").replace(/\s+/g, "");
   if (!key) throw new Error("Paystack is not configured");
   return { publicKey: key };
 });
@@ -19,8 +19,9 @@ export const verifyPaystackPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data: unknown) => verifySchema.parse(data))
   .handler(async ({ data, context }) => {
-    const secret = process.env.PAYSTACK_SECRET_KEY;
-    if (!secret) throw new Error("Paystack is not configured");
+    const secret = (process.env["PAYSTACK_SECRET_KEY"] ?? "").replace(/\s+/g, "");
+    if (!secret || secret.startsWith("pk_")) throw new Error("Paystack is not configured");
+
 
     const res = await fetch(
       `https://api.paystack.co/transaction/verify/${encodeURIComponent(data.reference)}`,

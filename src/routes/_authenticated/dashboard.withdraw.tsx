@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, CheckCircle2, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
@@ -46,6 +46,11 @@ function WithdrawPage() {
   const [manualMode, setManualMode] = useState(false);
   const [saveMethod, setSaveMethod] = useState(true);
   const [done, setDone] = useState(false);
+  // Stable per-attempt key: double clicks, retries and reload-resubmits all
+  // resolve to the same withdrawal request server-side.
+  const idempotencyKey = useRef(
+    `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`,
+  );
 
   const banksQuery = useQuery({
     queryKey: ["ng-banks"],
@@ -113,10 +118,15 @@ function WithdrawPage() {
           accountName: (accountName ?? manualName.trim()) || undefined,
           note: note || undefined,
           saveMethod,
+          idempotencyKey: idempotencyKey.current,
         },
       }),
     onSuccess: (r) => {
-      toast.success(`Withdrawal of ${nairaFormatter.format(amountNumber)} submitted`);
+      if (r.duplicate) toast.info("This withdrawal request was already submitted");
+      else toast.success(`Withdrawal of ${nairaFormatter.format(amountNumber)} submitted`);
+      idempotencyKey.current = `${Date.now().toString(36)}${Math.random()
+        .toString(36)
+        .slice(2, 10)}`;
       setDone(true);
       setTimeout(() => setDone(false), 2500);
       setAmount("");

@@ -25,6 +25,7 @@ import { Route as AuthenticatedDashboardReferralsRouteImport } from './routes/_a
 import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_authenticated/dashboard.profile'
 import { Route as AuthenticatedDashboardNotificationsRouteImport } from './routes/_authenticated/dashboard.notifications'
 import { Route as AuthenticatedDashboardKycRouteImport } from './routes/_authenticated/dashboard.kyc'
+import { Route as AuthenticatedDashboardExchangeHistoryRouteImport } from './routes/_authenticated/dashboard.exchange-history'
 import { Route as AuthenticatedDashboardExchangeRouteImport } from './routes/_authenticated/dashboard.exchange'
 import { Route as AuthenticatedDashboardDepositRouteImport } from './routes/_authenticated/dashboard.deposit'
 import { Route as AuthenticatedDashboardCryptoRouteImport } from './routes/_authenticated/dashboard.crypto'
@@ -128,6 +129,12 @@ const AuthenticatedDashboardKycRoute =
   AuthenticatedDashboardKycRouteImport.update({
     id: '/kyc',
     path: '/kyc',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardExchangeHistoryRoute =
+  AuthenticatedDashboardExchangeHistoryRouteImport.update({
+    id: '/exchange-history',
+    path: '/exchange-history',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
 const AuthenticatedDashboardExchangeRoute =
@@ -268,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/crypto': typeof AuthenticatedDashboardCryptoRoute
   '/dashboard/deposit': typeof AuthenticatedDashboardDepositRoute
   '/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
+  '/dashboard/exchange-history': typeof AuthenticatedDashboardExchangeHistoryRoute
   '/dashboard/kyc': typeof AuthenticatedDashboardKycRoute
   '/dashboard/notifications': typeof AuthenticatedDashboardNotificationsRoute
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
@@ -302,6 +310,7 @@ export interface FileRoutesByTo {
   '/dashboard/crypto': typeof AuthenticatedDashboardCryptoRoute
   '/dashboard/deposit': typeof AuthenticatedDashboardDepositRoute
   '/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
+  '/dashboard/exchange-history': typeof AuthenticatedDashboardExchangeHistoryRoute
   '/dashboard/kyc': typeof AuthenticatedDashboardKycRoute
   '/dashboard/notifications': typeof AuthenticatedDashboardNotificationsRoute
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
@@ -340,6 +349,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/crypto': typeof AuthenticatedDashboardCryptoRoute
   '/_authenticated/dashboard/deposit': typeof AuthenticatedDashboardDepositRoute
   '/_authenticated/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
+  '/_authenticated/dashboard/exchange-history': typeof AuthenticatedDashboardExchangeHistoryRoute
   '/_authenticated/dashboard/kyc': typeof AuthenticatedDashboardKycRoute
   '/_authenticated/dashboard/notifications': typeof AuthenticatedDashboardNotificationsRoute
   '/_authenticated/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
@@ -378,6 +388,7 @@ export interface FileRouteTypes {
     | '/dashboard/crypto'
     | '/dashboard/deposit'
     | '/dashboard/exchange'
+    | '/dashboard/exchange-history'
     | '/dashboard/kyc'
     | '/dashboard/notifications'
     | '/dashboard/profile'
@@ -412,6 +423,7 @@ export interface FileRouteTypes {
     | '/dashboard/crypto'
     | '/dashboard/deposit'
     | '/dashboard/exchange'
+    | '/dashboard/exchange-history'
     | '/dashboard/kyc'
     | '/dashboard/notifications'
     | '/dashboard/profile'
@@ -449,6 +461,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/crypto'
     | '/_authenticated/dashboard/deposit'
     | '/_authenticated/dashboard/exchange'
+    | '/_authenticated/dashboard/exchange-history'
     | '/_authenticated/dashboard/kyc'
     | '/_authenticated/dashboard/notifications'
     | '/_authenticated/dashboard/profile'
@@ -578,6 +591,13 @@ declare module '@tanstack/react-router' {
       path: '/kyc'
       fullPath: '/dashboard/kyc'
       preLoaderRoute: typeof AuthenticatedDashboardKycRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/exchange-history': {
+      id: '/_authenticated/dashboard/exchange-history'
+      path: '/exchange-history'
+      fullPath: '/dashboard/exchange-history'
+      preLoaderRoute: typeof AuthenticatedDashboardExchangeHistoryRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
     '/_authenticated/dashboard/exchange': {
@@ -762,6 +782,7 @@ interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardCryptoRoute: typeof AuthenticatedDashboardCryptoRoute
   AuthenticatedDashboardDepositRoute: typeof AuthenticatedDashboardDepositRoute
   AuthenticatedDashboardExchangeRoute: typeof AuthenticatedDashboardExchangeRoute
+  AuthenticatedDashboardExchangeHistoryRoute: typeof AuthenticatedDashboardExchangeHistoryRoute
   AuthenticatedDashboardKycRoute: typeof AuthenticatedDashboardKycRoute
   AuthenticatedDashboardNotificationsRoute: typeof AuthenticatedDashboardNotificationsRoute
   AuthenticatedDashboardProfileRoute: typeof AuthenticatedDashboardProfileRoute
@@ -777,6 +798,8 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
     AuthenticatedDashboardCryptoRoute: AuthenticatedDashboardCryptoRoute,
     AuthenticatedDashboardDepositRoute: AuthenticatedDashboardDepositRoute,
     AuthenticatedDashboardExchangeRoute: AuthenticatedDashboardExchangeRoute,
+    AuthenticatedDashboardExchangeHistoryRoute:
+      AuthenticatedDashboardExchangeHistoryRoute,
     AuthenticatedDashboardKycRoute: AuthenticatedDashboardKycRoute,
     AuthenticatedDashboardNotificationsRoute:
       AuthenticatedDashboardNotificationsRoute,

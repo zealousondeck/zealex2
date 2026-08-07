@@ -91,6 +91,31 @@ function DepositPage() {
 }
 
 
+const STATUS_STYLES: Record<string, { label: string; className: string }> = {
+  pending: { label: "Pending", className: "bg-secondary text-muted-foreground" },
+  processing: { label: "Processing", className: "bg-gold-soft text-foreground" },
+  approved: { label: "Processing", className: "bg-gold-soft text-foreground" },
+  completed: { label: "Completed", className: "bg-success/10 text-success" },
+  paid: { label: "Completed", className: "bg-success/10 text-success" },
+  failed: { label: "Failed", className: "bg-destructive/10 text-destructive" },
+  rejected: { label: "Failed", className: "bg-destructive/10 text-destructive" },
+  cancelled: { label: "Failed", className: "bg-destructive/10 text-destructive" },
+};
+
+export function StatusBadge({ status }: { status: string }) {
+  const meta = STATUS_STYLES[(status ?? "").toLowerCase()] ?? {
+    label: status || "Pending",
+    className: "bg-secondary text-muted-foreground",
+  };
+  return (
+    <span
+      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${meta.className}`}
+    >
+      {meta.label}
+    </span>
+  );
+}
+
 export function RequestHistory({ rows, title }: { rows: DepositRow[]; title: string }) {
   return (
     <div>
@@ -113,6 +138,7 @@ export function RequestHistory({ rows, title }: { rows: DepositRow[]; title: str
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <StatusBadge status={r.status} />
                   <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold uppercase">
                     {r.stage.replace("_", " ")}
                   </span>

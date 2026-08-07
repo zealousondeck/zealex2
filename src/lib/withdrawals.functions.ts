@@ -29,6 +29,8 @@ const withdrawSchema = z.object({
   accountName: z.string().min(2).max(120).optional(),
   note: z.string().max(200).optional(),
   saveMethod: z.boolean().optional(),
+  /** Client-generated key so retries/double submits never create two requests. */
+  idempotencyKey: z.string().min(6).max(60).optional(),
 });
 
 /**
@@ -40,6 +42,33 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
   .validator((data: unknown) => withdrawSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+
+    // Idempotency: the same key always maps to the same request row.
+    const reference = data.idempotencyKey
+      ? `wd_${data.idempotencyKey}`.slice(0, 80)
+      : `wd_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+    const { data: alreadyExists } = await supabase
+      .from("withdrawal_requests")
+      .select("id, reference, amount")
+      .eq("user_id", userId)
+      .eq("reference", reference)
+      .maybeSingle();
+    if (alreadyExists) {
+      const { data: currentWallet } = await supabase
+        .from("wallets")
+        .select("balance")
+        .eq("user_id", userId)
+        .eq("currency", "NGN")
+        .maybeSingle();
+      return {
+        ok: true,
+        duplicate: true,
+        reference: alreadyExists.reference,
+        accountName: data.accountName ?? "",
+        newBalance: Number(currentWallet?.balance ?? 0),
+      };
+    }
 
     // Re-verify the destination server-side so a tampered client can't fake it.
     // If Paystack cannot resolve names on this account, fall back to the name
@@ -103,7 +132,6 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
     if (debitErr) throw new Error(debitErr.message);
     if (!debited) throw new Error("Balance changed — please try again");
 
-    const reference = `wd_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const noteLine = [
       `${data.bankName} · ${data.accountNumber} · ${resolved.accountName}`,
       data.note,
@@ -164,6 +192,7 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
 
     return {
       ok: true,
+      duplicate: false,
       reference: created?.reference ?? reference,
       accountName: resolved.accountName,
       newBalance: Number(debited.balance),
