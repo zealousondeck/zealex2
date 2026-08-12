@@ -10,25 +10,35 @@ function secret() {
   // Trim: pasted keys often carry stray whitespace/newlines, which Paystack
   // rejects with a bare "Invalid key".
   const key = (process.env["PAYSTACK_SECRET_KEY"] ?? "").replace(/\s+/g, "");
-  if (!key) throw new Error("Bank verification is not configured");
-  if (key.startsWith("pk_")) {
-    // A publishable key in the secret slot is the most common cause of the
-    // provider's opaque "Invalid key" response.
-    throw new Error("Bank verification is misconfigured on the server");
+  if (!key) throw new Error("Bank services are not configured on the server");
+  if (!key.startsWith("sk_")) {
+    // A publishable/malformed key in the secret slot is the most common cause
+    // of the provider's opaque "Invalid key" response.
+    throw new Error("Bank services are misconfigured on the server");
   }
   return key;
 }
 
 export async function fetchNigerianBanks(): Promise<BankOption[]> {
-  const res = await fetch("https://api.paystack.co/bank?currency=NGN&perPage=100", {
-    headers: { Authorization: `Bearer ${secret()}` },
-  });
-  if (!res.ok) throw new Error("Could not load banks right now");
-  const payload = (await res.json()) as {
-    status: boolean;
+  let res: Response;
+  try {
+    res = await fetch("https://api.paystack.co/bank?currency=NGN&perPage=100", {
+      headers: { Authorization: `Bearer ${secret()}` },
+    });
+  } catch {
+    throw new Error("Could not reach the bank network — please retry");
+  }
+  if (res.status === 401 || res.status === 403) {
+    throw new Error("Bank services are misconfigured on the server");
+  }
+  if (!res.ok) throw new Error("Bank list is temporarily unavailable — please retry");
+  const payload = (await res.json().catch(() => null)) as {
+    status?: boolean;
     data?: { name: string; code: string }[];
-  };
-  if (!payload.status || !payload.data) throw new Error("Could not load banks right now");
+  } | null;
+  if (!payload?.status || !payload.data) {
+    throw new Error("Bank list is temporarily unavailable — please retry");
+  }
   const seen = new Set<string>();
   return payload.data
     .filter((b) => {
@@ -40,6 +50,7 @@ export async function fetchNigerianBanks(): Promise<BankOption[]> {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+
 /**
  * Resolve a NUBAN to its registered account name.
  * Never throws for provider-side limitations: Paystack answers account
@@ -50,17 +61,34 @@ export async function resolveNubanAccount(
   accountNumber: string,
   bankCode: string,
 ): Promise<ResolveResult> {
+  let key: string;
+  try {
+    key = secret();
+  } catch {
+    return {
+      verified: false,
+      unavailable: true,
+      reason:
+        "Automatic name check is unavailable right now — confirm the account name yourself to continue.",
+    };
+  }
+
   let res: Response;
   try {
     res = await fetch(
       `https://api.paystack.co/bank/resolve?account_number=${encodeURIComponent(
         accountNumber,
       )}&bank_code=${encodeURIComponent(bankCode)}`,
-      { headers: { Authorization: `Bearer ${secret()}` } },
+      { headers: { Authorization: `Bearer ${key}` } },
     );
   } catch {
-    return { verified: false, reason: "Could not reach the bank network", unavailable: true };
+    return {
+      verified: false,
+      reason: "Could not reach the bank network — confirm the account name yourself to continue.",
+      unavailable: true,
+    };
   }
+
 
   const payload = (await res.json().catch(() => null)) as {
     status?: boolean;
