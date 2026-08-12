@@ -29,16 +29,42 @@ import { toast } from "sonner";
 import { useMyPermissions, type Permission } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
-  beforeLoad: async () => {
-    const { data: userData } = await supabase.auth.getUser();
-    const uid = userData.user?.id;
-    if (!uid) throw redirect({ to: "/auth" });
-    const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid);
-    const staff = ["admin", "super_admin", "finance", "support", "kyc_officer", "moderator"];
-    if (!data || !data.some((r) => staff.includes(String(r.role)))) {
-      throw redirect({ to: "/dashboard" });
-    }
-  },
+beforeLoad: async () => {
+  const { data: userData } = await supabase.auth.getUser();
+
+  const uid = userData.user?.id;
+
+  if (!uid) {
+    throw redirect({ to: "/auth" });
+  }
+
+  const { data: roles, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", uid);
+
+  if (error) {
+    console.error("Role check failed:", error);
+    throw redirect({ to: "/dashboard" });
+  }
+
+  const STAFF_ROLES = [
+    "admin",
+    "super_admin",
+    "finance",
+    "support",
+    "kyc_officer",
+    "moderator",
+  ];
+
+  const isStaff = (roles ?? []).some((r) =>
+    STAFF_ROLES.includes(String(r.role))
+  );
+
+  if (!isStaff) {
+    throw redirect({ to: "/dashboard" });
+  }
+},
   component: AdminLayout,
 });
 
