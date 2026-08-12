@@ -156,7 +156,10 @@ function WithdrawPage() {
     if (overBalance) return toast.error("Amount exceeds your wallet balance");
     if (!bankCode) return toast.error("Select your bank");
     if (!confirmedName) return toast.error("Verify or enter your account name first");
+    // Guard against double submits (double click / re-render / enter key).
+    if (submitMut.isPending) return;
     submitMut.mutate();
+
   }
 
   return (
