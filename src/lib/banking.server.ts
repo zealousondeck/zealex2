@@ -61,17 +61,34 @@ export async function resolveNubanAccount(
   accountNumber: string,
   bankCode: string,
 ): Promise<ResolveResult> {
+  let key: string;
+  try {
+    key = secret();
+  } catch {
+    return {
+      verified: false,
+      unavailable: true,
+      reason:
+        "Automatic name check is unavailable right now — confirm the account name yourself to continue.",
+    };
+  }
+
   let res: Response;
   try {
     res = await fetch(
       `https://api.paystack.co/bank/resolve?account_number=${encodeURIComponent(
         accountNumber,
       )}&bank_code=${encodeURIComponent(bankCode)}`,
-      { headers: { Authorization: `Bearer ${secret()}` } },
+      { headers: { Authorization: `Bearer ${key}` } },
     );
   } catch {
-    return { verified: false, reason: "Could not reach the bank network", unavailable: true };
+    return {
+      verified: false,
+      reason: "Could not reach the bank network — confirm the account name yourself to continue.",
+      unavailable: true,
+    };
   }
+
 
   const payload = (await res.json().catch(() => null)) as {
     status?: boolean;
