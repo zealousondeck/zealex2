@@ -128,8 +128,12 @@ export function PaystackButton({
       writePending(record);
       setPhase("verifying");
       let lastError = "Verification failed";
+      // Non-retryable outcomes must stop the loop and clear the pending payment.
+      const isFinal = (m: string) =>
+        /not completed|declined|misconfigured|Only Naira|zero payment/i.test(m);
+      const MAX = 6;
       try {
-        for (let attempt = 0; attempt < 4; attempt++) {
+        for (let attempt = 0; attempt < MAX; attempt++) {
           try {
             const res = await verify({ data: { reference, expectedAmount: expected } });
             writePending(null);
@@ -143,13 +147,24 @@ export function PaystackButton({
             return true;
           } catch (err) {
             lastError = err instanceof Error ? err.message : lastError;
-            if (attempt < 3) await sleep(1200 * (attempt + 1));
+            if (isFinal(lastError)) {
+              writePending(null);
+              if (!mounted.current) return false;
+              setPending(null);
+              setPhase("idle");
+              toast.error(lastError);
+              return false;
+            }
+            if (attempt < MAX - 1) await sleep(1500 * (attempt + 1));
           }
         }
         if (!mounted.current) return false;
         setPhase("idle");
         toast.error(`${lastError}. You can retry the verification below.`);
+        // Surface whatever already landed in history/wallet meanwhile.
+        onSuccess?.();
         return false;
+
       } finally {
         verifying.current = false;
       }
