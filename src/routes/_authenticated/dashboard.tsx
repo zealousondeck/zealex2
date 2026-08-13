@@ -79,6 +79,8 @@ function DashboardInner() {
   const [exchangeOpen, setExchangeOpen] = useState(true);
 
   const { data: notifications } = useNotifications();
+const { data: isAdmin } = useIsAdmin();
+const unread = (notifications ?? []).filter((n) => !n.read).length;
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
