@@ -96,11 +96,14 @@ export const verifyPaystackPayment = createServerFn({ method: "POST" })
       _amount: nairaAmount,
       _reference: data.reference,
     });
-    if (error) throw new VerifyError("Could not credit your wallet — please retry", true);
-    return {
-      ok: true,
-      duplicate: (rpc as { duplicate?: boolean } | null)?.duplicate ?? false,
-      amount: nairaAmount,
-    };
-  });
+    if (error) {
+      console.error("[Paystack] Wallet credit RPC failed:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
 
+      throw new VerifyError("Could not credit your wallet — please retry", true);
+    }
+  });

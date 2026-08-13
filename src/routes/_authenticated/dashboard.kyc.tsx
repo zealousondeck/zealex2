@@ -227,7 +227,12 @@ function KycForm({ resubmit = false }: { resubmit?: boolean }) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="fn">Full legal name</Label>
-          <Input id="fn" value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={80} />
+          <Input
+            id="fn"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            maxLength={80}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="dob">Date of birth</Label>
@@ -235,12 +240,20 @@ function KycForm({ resubmit = false }: { resubmit?: boolean }) {
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="addr">Residential address</Label>
-          <Textarea id="addr" value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} rows={2} />
+          <Textarea
+            id="addr"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            maxLength={300}
+            rows={2}
+          />
         </div>
         <div className="space-y-2">
           <Label>ID type</Label>
           <Select value={idType} onValueChange={setIdType}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="nin">National ID (NIN)</SelectItem>
               <SelectItem value="passport">Passport</SelectItem>
@@ -251,7 +264,12 @@ function KycForm({ resubmit = false }: { resubmit?: boolean }) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="idn">ID number</Label>
-          <Input id="idn" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} maxLength={40} />
+          <Input
+            id="idn"
+            value={idNumber}
+            onChange={(e) => setIdNumber(e.target.value)}
+            maxLength={40}
+          />
         </div>
       </div>
 
@@ -261,7 +279,9 @@ function KycForm({ resubmit = false }: { resubmit?: boolean }) {
 
       <Button type="submit" variant="gold" className="w-full font-bold" disabled={submitting}>
         {submitting ? (
-          <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting…</>
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting…
+          </>
         ) : (
           "Submit for verification"
         )}
@@ -283,7 +303,10 @@ function FileField({
 }) {
   return (
     <div className="space-y-2">
-      <Label>{label}{optional && <span className="text-muted-foreground"> (optional)</span>}</Label>
+      <Label>
+        {label}
+        {optional && <span className="text-muted-foreground"> (optional)</span>}
+      </Label>
       <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-background p-4 hover:border-gold">
         <div className="flex items-center gap-3">
           <Upload className="h-5 w-5 text-muted-foreground" />
@@ -381,9 +404,7 @@ function AdminReviewDialog({
     let cancelled = false;
     async function sign(path: string | null) {
       if (!path) return undefined;
-      const { data } = await supabase.storage
-        .from("kyc-documents")
-        .createSignedUrl(path, 600);
+      const { data } = await supabase.storage.from("kyc-documents").createSignedUrl(path, 600);
       return data?.signedUrl;
     }
     (async () => {
@@ -435,10 +456,7 @@ function AdminReviewDialog({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4" onClick={onClose}>
       <div
         className="w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}
@@ -500,9 +518,7 @@ function DocumentPreview({ label, url }: { label: string; url?: string }) {
   return (
     <div className="rounded-xl border border-border bg-background p-3">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          {label}
-        </p>
+        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
         {url && (
           <a
             href={url}
@@ -527,11 +543,7 @@ function DocumentPreview({ label, url }: { label: string; url?: string }) {
         </a>
       ) : (
         <a href={url} target="_blank" rel="noreferrer">
-          <img
-            src={url}
-            alt={label}
-            className="max-h-56 w-full rounded-lg object-contain"
-          />
+          <img src={url} alt={label} className="max-h-56 w-full rounded-lg object-contain" />
         </a>
       )}
     </div>

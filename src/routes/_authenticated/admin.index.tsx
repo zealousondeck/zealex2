@@ -122,16 +122,68 @@ function AdminOverview() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        <StatCard label="Total Users" value={isLoading ? "…" : stats!.totalUsers} icon={Users} tone="gold" />
-        <StatCard label="Active Users" value={isLoading ? "…" : stats!.activeUsers} icon={Activity} tone="success" />
-        <StatCard label="Pending KYC" value={isLoading ? "…" : stats!.pendingKyc} icon={ShieldCheck} tone="warn" hint={`${stats?.approvedKyc ?? 0} approved`} />
-        <StatCard label="Pending Deposits" value={isLoading ? "…" : stats!.pendingDeposits} icon={ArrowDownLeft} tone="warn" />
-        <StatCard label="Pending Withdrawals" value={isLoading ? "…" : stats!.pendingWithdrawals} icon={ArrowUpRight} tone="warn" />
-        <StatCard label="Pending Crypto" value={isLoading ? "…" : stats!.pendingCrypto} icon={Coins} tone="default" />
-        <StatCard label="Pending Gift Cards" value={isLoading ? "…" : stats!.pendingGift} icon={Gift} tone="default" />
-        <StatCard label="Completed Trades" value={isLoading ? "…" : stats!.completedTx} icon={CheckCircle2} tone="success" />
-        <StatCard label="Total Volume" value={isLoading ? "…" : nairaFormatter.format(stats!.totalVolume)} icon={TrendingUp} tone="gold" />
-        <StatCard label="Est. Revenue" value={isLoading ? "…" : nairaFormatter.format(stats!.totalRevenue)} icon={Banknote} tone="success" hint="2% spread assumption" />
+        <StatCard
+          label="Total Users"
+          value={isLoading ? "…" : stats!.totalUsers}
+          icon={Users}
+          tone="gold"
+        />
+        <StatCard
+          label="Active Users"
+          value={isLoading ? "…" : stats!.activeUsers}
+          icon={Activity}
+          tone="success"
+        />
+        <StatCard
+          label="Pending KYC"
+          value={isLoading ? "…" : stats!.pendingKyc}
+          icon={ShieldCheck}
+          tone="warn"
+          hint={`${stats?.approvedKyc ?? 0} approved`}
+        />
+        <StatCard
+          label="Pending Deposits"
+          value={isLoading ? "…" : stats!.pendingDeposits}
+          icon={ArrowDownLeft}
+          tone="warn"
+        />
+        <StatCard
+          label="Pending Withdrawals"
+          value={isLoading ? "…" : stats!.pendingWithdrawals}
+          icon={ArrowUpRight}
+          tone="warn"
+        />
+        <StatCard
+          label="Pending Crypto"
+          value={isLoading ? "…" : stats!.pendingCrypto}
+          icon={Coins}
+          tone="default"
+        />
+        <StatCard
+          label="Pending Gift Cards"
+          value={isLoading ? "…" : stats!.pendingGift}
+          icon={Gift}
+          tone="default"
+        />
+        <StatCard
+          label="Completed Trades"
+          value={isLoading ? "…" : stats!.completedTx}
+          icon={CheckCircle2}
+          tone="success"
+        />
+        <StatCard
+          label="Total Volume"
+          value={isLoading ? "…" : nairaFormatter.format(stats!.totalVolume)}
+          icon={TrendingUp}
+          tone="gold"
+        />
+        <StatCard
+          label="Est. Revenue"
+          value={isLoading ? "…" : nairaFormatter.format(stats!.totalRevenue)}
+          icon={Banknote}
+          tone="success"
+          hint="2% spread assumption"
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -155,7 +207,13 @@ function AdminOverview() {
                 <XAxis dataKey="date" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis fontSize={11} tickLine={false} axisLine={false} width={50} />
                 <Tooltip formatter={(v) => nairaFormatter.format(Number(v))} />
-                <Area type="monotone" dataKey="volume" stroke="hsl(45 90% 55%)" strokeWidth={2} fill="url(#vg)" />
+                <Area
+                  type="monotone"
+                  dataKey="volume"
+                  stroke="hsl(45 90% 55%)"
+                  strokeWidth={2}
+                  fill="url(#vg)"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -166,7 +224,13 @@ function AdminOverview() {
           <div className="h-64">
             <ResponsiveContainer>
               <PieChart>
-                <Pie data={pieData} dataKey="value" innerRadius={45} outerRadius={80} paddingAngle={4}>
+                <Pie
+                  data={pieData}
+                  dataKey="value"
+                  innerRadius={45}
+                  outerRadius={80}
+                  paddingAngle={4}
+                >
                   {pieData.map((d) => (
                     <Cell key={d.name} fill={d.color} />
                   ))}
@@ -226,7 +290,10 @@ function AdminOverview() {
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-bold">Recent Transactions</h2>
-            <Link to="/admin/transactions" className="text-xs font-semibold text-gold hover:underline">
+            <Link
+              to="/admin/transactions"
+              className="text-xs font-semibold text-gold hover:underline"
+            >
               View all
             </Link>
           </div>
@@ -243,7 +310,9 @@ function AdminOverview() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold">{nairaFormatter.format(Number(t.amount))}</p>
-                  <p className="text-[10px] font-semibold uppercase text-muted-foreground">{t.status}</p>
+                  <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+                    {t.status}
+                  </p>
                 </div>
               </li>
             ))}
@@ -265,7 +334,9 @@ function AdminOverview() {
               <li key={d.id} className="flex items-center justify-between py-2.5">
                 <div>
                   <p className="text-sm font-semibold">{d.reference}</p>
-                  <p className="text-xs text-muted-foreground">{new Date(d.created_at).toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(d.created_at).toLocaleString()}
+                  </p>
                 </div>
                 <p className="text-sm font-bold">{nairaFormatter.format(Number(d.amount))}</p>
               </li>

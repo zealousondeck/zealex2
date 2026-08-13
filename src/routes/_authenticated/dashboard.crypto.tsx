@@ -187,7 +187,10 @@ function CryptoExchangePage() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-        <form onSubmit={onSubmit} className="space-y-5 rounded-2xl border border-border bg-card p-5">
+        <form
+          onSubmit={onSubmit}
+          className="space-y-5 rounded-2xl border border-border bg-card p-5"
+        >
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Coin</Label>
@@ -379,7 +382,9 @@ function Row({ label, value, hint }: { label: string; value: string; hint?: stri
       <span className="text-muted-foreground">{label}</span>
       <span className="text-right font-semibold">
         {value}
-        {hint && <span className="block text-[11px] font-normal text-muted-foreground">{hint}</span>}
+        {hint && (
+          <span className="block text-[11px] font-normal text-muted-foreground">{hint}</span>
+        )}
       </span>
     </div>
   );

@@ -35,10 +35,7 @@ export function useCryptoRates() {
   return useQuery({
     queryKey: ["rates", "crypto"],
     queryFn: async (): Promise<CryptoRate[]> => {
-      const { data, error } = await supabase
-        .from(CRYPTO)
-        .select("*")
-        .order("symbol");
+      const { data, error } = await supabase.from(CRYPTO).select("*").order("symbol");
       if (error) throw error;
       return (data ?? []) as unknown as CryptoRate[];
     },
@@ -49,10 +46,7 @@ export function useGiftcardRates() {
   return useQuery({
     queryKey: ["rates", "giftcard"],
     queryFn: async (): Promise<GiftcardRate[]> => {
-      const { data, error } = await supabase
-        .from(GIFT)
-        .select("*")
-        .order("brand");
+      const { data, error } = await supabase.from(GIFT).select("*").order("brand");
       if (error) throw error;
       return (data ?? []) as unknown as GiftcardRate[];
     },

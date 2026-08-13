@@ -29,7 +29,13 @@ export type GiftCard = {
 
 export const giftCards: GiftCard[] = [
   { brand: "Amazon", category: "E-commerce", currency: "USD", ratePerUnit: 1_180, change24h: 0.6 },
-  { brand: "Apple / iTunes", category: "Entertainment", currency: "USD", ratePerUnit: 1_240, change24h: 1.1 },
+  {
+    brand: "Apple / iTunes",
+    category: "Entertainment",
+    currency: "USD",
+    ratePerUnit: 1_240,
+    change24h: 1.1,
+  },
   { brand: "Steam", category: "Gaming", currency: "USD", ratePerUnit: 1_320, change24h: -0.4 },
   { brand: "Google Play", category: "Apps", currency: "USD", ratePerUnit: 1_090, change24h: 0.2 },
   { brand: "Sephora", category: "Retail", currency: "USD", ratePerUnit: 990, change24h: 0.0 },

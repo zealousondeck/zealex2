@@ -11,16 +11,11 @@ import { Button } from "@/components/ui/button";
 import { nairaFormatter } from "@/lib/market-data";
 import { ReceiptActions } from "@/components/dashboard/ReceiptActions";
 import { PaystackButton, useVerifyDeposit } from "@/components/dashboard/PaystackButton";
-import {
-  clearAttempt,
-  useDepositAttempts,
-  type DepositAttempt,
-} from "@/lib/deposit-attempts";
+import { clearAttempt, useDepositAttempts, type DepositAttempt } from "@/lib/deposit-attempts";
 
 export const Route = createFileRoute("/_authenticated/dashboard/deposit")({
   component: DepositPage,
 });
-
 
 type DepositRow = {
   id: string;
@@ -179,8 +174,6 @@ function PendingAttempts() {
   );
 }
 
-
-
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   pending: { label: "Pending", className: "bg-secondary text-muted-foreground" },
   processing: { label: "Processing", className: "bg-gold-soft text-foreground" },
@@ -198,9 +191,7 @@ export function StatusBadge({ status }: { status: string }) {
     className: "bg-secondary text-muted-foreground",
   };
   return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${meta.className}`}
-    >
+    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${meta.className}`}>
       {meta.label}
     </span>
   );

@@ -26,9 +26,29 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 function toCsv(rows: AdminTx[]) {
-  const header = ["reference", "type", "category", "asset", "amount", "quantity", "status", "stage", "created_at"];
+  const header = [
+    "reference",
+    "type",
+    "category",
+    "asset",
+    "amount",
+    "quantity",
+    "status",
+    "stage",
+    "created_at",
+  ];
   const body = rows.map((r) =>
-    [r.reference, r.type, r.category, r.asset, r.amount, r.quantity ?? "", r.status, r.stage, r.created_at]
+    [
+      r.reference,
+      r.type,
+      r.category,
+      r.asset,
+      r.amount,
+      r.quantity ?? "",
+      r.status,
+      r.stage,
+      r.created_at,
+    ]
       .map((v) => `"${String(v).replace(/"/g, '""')}"`)
       .join(","),
   );
@@ -127,7 +147,9 @@ function TxPage() {
               {(data ?? []).map((t) => (
                 <tr key={t.id} className="hover:bg-secondary/30">
                   <td className="px-4 py-3 font-mono text-xs">{t.reference}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{t.user_id.slice(0, 8)}…</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {t.user_id.slice(0, 8)}…
+                  </td>
                   <td className="px-4 py-3">
                     <p className="font-semibold">{t.asset}</p>
                     <p className="text-xs uppercase text-muted-foreground">

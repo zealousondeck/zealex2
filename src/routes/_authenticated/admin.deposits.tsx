@@ -29,7 +29,9 @@ function DepositsPage() {
     <div className="space-y-5">
       <div>
         <h1 className="font-display text-3xl font-extrabold tracking-tight">Deposits</h1>
-        <p className="text-sm text-muted-foreground">Review and approve incoming deposit requests</p>
+        <p className="text-sm text-muted-foreground">
+          Review and approve incoming deposit requests
+        </p>
       </div>
 
       <div className="flex gap-1 rounded-xl border border-border bg-card p-1 text-sm">
@@ -39,7 +41,9 @@ function DepositsPage() {
             onClick={() => setTab(t)}
             className={cn(
               "flex-1 rounded-lg px-3 py-1.5 font-semibold capitalize transition-colors",
-              t === tab ? "bg-gold text-gold-foreground" : "text-muted-foreground hover:bg-secondary",
+              t === tab
+                ? "bg-gold text-gold-foreground"
+                : "text-muted-foreground hover:bg-secondary",
             )}
           >
             {t}
@@ -71,7 +75,9 @@ function DepositsPage() {
               {(data ?? []).map((d) => (
                 <tr key={d.id} className="hover:bg-secondary/30">
                   <td className="px-4 py-3 font-mono text-xs">{d.reference}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{d.user_id.slice(0, 8)}…</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {d.user_id.slice(0, 8)}…
+                  </td>
                   <td className="px-4 py-3 font-bold">{nairaFormatter.format(Number(d.amount))}</td>
                   <td className="px-4 py-3">
                     <span
@@ -154,7 +160,8 @@ function DepositDialog({ deposit, onClose }: { deposit: AdminDeposit; onClose: (
           <div>
             <h3 className="font-bold">Deposit · {deposit.reference}</h3>
             <p className="text-xs text-muted-foreground">
-              {new Date(deposit.created_at).toLocaleString()} · <span className="uppercase">{deposit.status}</span>
+              {new Date(deposit.created_at).toLocaleString()} ·{" "}
+              <span className="uppercase">{deposit.status}</span>
             </p>
           </div>
           <Button size="sm" variant="ghost" onClick={onClose}>
@@ -177,10 +184,16 @@ function DepositDialog({ deposit, onClose }: { deposit: AdminDeposit; onClose: (
             )}
           </div>
           <div className="rounded-xl border border-border bg-background p-3">
-            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Proof of payment</p>
+            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+              Proof of payment
+            </p>
             {proofUrl ? (
               <a href={proofUrl} target="_blank" rel="noreferrer">
-                <img src={proofUrl} alt="proof" className="max-h-64 w-full rounded object-contain" />
+                <img
+                  src={proofUrl}
+                  alt="proof"
+                  className="max-h-64 w-full rounded object-contain"
+                />
               </a>
             ) : (
               <p className="text-sm text-muted-foreground">No proof uploaded.</p>
@@ -189,7 +202,13 @@ function DepositDialog({ deposit, onClose }: { deposit: AdminDeposit; onClose: (
         </div>
         <div className="space-y-3 border-t border-border p-5">
           <Label htmlFor="dn">Internal note</Label>
-          <Textarea id="dn" rows={2} value={note} onChange={(e) => setNote(e.target.value)} maxLength={400} />
+          <Textarea
+            id="dn"
+            rows={2}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={400}
+          />
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => decide("rejected")} disabled={mut.isPending}>
               Reject

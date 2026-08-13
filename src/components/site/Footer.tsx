@@ -34,10 +34,7 @@ export function Footer() {
               Zealex Exchange is the premium way to trade gift cards and cryptocurrency at the best
               rates — with instant payouts and bank-grade security.
             </p>
-            <form
-              className="mt-6 flex max-w-sm gap-2"
-              onSubmit={(e) => e.preventDefault()}
-            >
+            <form className="mt-6 flex max-w-sm gap-2" onSubmit={(e) => e.preventDefault()}>
               <div className="relative flex-1">
                 <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-foreground/40" />
                 <Input

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Wallet,
@@ -53,7 +54,12 @@ const exchangeGroup = {
       icon: Gift,
       search: { tab: "giftcard" as const },
     },
-    { to: "/dashboard/exchange-history", label: "Exchange History", icon: History, search: undefined },
+    {
+      to: "/dashboard/exchange-history",
+      label: "Exchange History",
+      icon: History,
+      search: undefined,
+    },
   ],
 } as const;
 
@@ -67,11 +73,12 @@ function DashboardLayout() {
 
 function DashboardInner() {
   useRealtimeSync();
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [exchangeOpen, setExchangeOpen] = useState(true);
+
   const { data: notifications } = useNotifications();
-  const { data: isAdmin } = useIsAdmin();
-  const unread = (notifications ?? []).filter((n) => !n.read).length;
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
@@ -90,24 +97,41 @@ function DashboardInner() {
         </div>
         <nav className="mt-8 flex flex-1 flex-col gap-1">
           <div className="mt-1">
-            <p className="flex items-center gap-3 px-3 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            <button
+              type="button"
+              onClick={() => setExchangeOpen((open) => !open)}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              aria-expanded={exchangeOpen}
+            >
               <exchangeGroup.icon className="h-4 w-4" />
-              {exchangeGroup.label}
-            </p>
-            <div className="ml-4 flex flex-col gap-1 border-l border-border pl-2">
-              {exchangeGroup.items.map((item) => (
-                <Link
-                  key={item.label}
-                  to={item.to}
-                  search={item.search as never}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                  activeProps={{ className: "bg-gold-soft text-foreground" }}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              ))}
-            </div>
+
+              <span className="flex-1">{exchangeGroup.label}</span>
+
+              <span
+                className={`text-base transition-transform duration-200 ${
+                  exchangeOpen ? "rotate-90" : ""
+                }`}
+              >
+                ›
+              </span>
+            </button>
+
+            {exchangeOpen && (
+              <div className="ml-4 flex flex-col gap-1 border-l border-border pl-2">
+                {exchangeGroup.items.map((item) => (
+                  <Link
+                    key={item.label}
+                    to={item.to}
+                    search={item.search as never}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                    activeProps={{ className: "bg-gold-soft text-foreground" }}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
           {navItems.map((item) => (
             <Link

@@ -30,13 +30,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  cryptoAssets,
-  faqs,
-  giftCards,
-  nairaFormatter,
-  testimonials,
-} from "@/lib/market-data";
+import { cryptoAssets, faqs, giftCards, nairaFormatter, testimonials } from "@/lib/market-data";
 import { cn } from "@/lib/utils";
 import heroImg from "@/assets/hero-dashboard.jpg";
 import phoneImg from "@/assets/app-phone.jpg";
@@ -87,8 +81,8 @@ function Index() {
               <span className="text-gradient-gold">best rates</span>, instantly.
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Zealex Exchange turns your gift cards and cryptocurrency into cash in minutes.
-              Premium rates, bank-grade security, and payouts that actually land instantly.
+              Zealex Exchange turns your gift cards and cryptocurrency into cash in minutes. Premium
+              rates, bank-grade security, and payouts that actually land instantly.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button variant="gold" size="xl" className="font-semibold">
@@ -136,10 +130,12 @@ function Index() {
       <Section id="rates" className="py-16 lg:py-24">
         <div className="grid gap-10 lg:grid-cols-[1fr_0.85fr]">
           <motion.div {...fadeUp}>
-            <h2 className="font-display text-3xl font-extrabold sm:text-4xl">Live exchange rates</h2>
+            <h2 className="font-display text-3xl font-extrabold sm:text-4xl">
+              Live exchange rates
+            </h2>
             <p className="mt-3 max-w-lg text-muted-foreground">
-              Real market rates, refreshed continuously. No hidden spreads — the rate you see is
-              the rate you get.
+              Real market rates, refreshed continuously. No hidden spreads — the rate you see is the
+              rate you get.
             </p>
 
             <div className="mt-8 space-y-6">
@@ -238,9 +234,7 @@ function Index() {
               transition={{ ...fadeUp.transition, delay: i * 0.06 }}
               className="relative rounded-2xl border border-border/60 bg-card p-6 shadow-soft"
             >
-              <span className="font-display text-sm font-extrabold text-gold">
-                0{i + 1}
-              </span>
+              <span className="font-display text-sm font-extrabold text-gold">0{i + 1}</span>
               <span className="mt-3 grid h-11 w-11 place-items-center rounded-xl bg-gradient-ink text-ink-foreground">
                 <s.icon className="h-5 w-5" />
               </span>
@@ -262,7 +256,9 @@ function Index() {
                 <span
                   className={cn(
                     "grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold",
-                    i <= 2 ? "bg-gradient-gold text-gold-foreground" : "bg-white/10 text-ink-foreground/50",
+                    i <= 2
+                      ? "bg-gradient-gold text-gold-foreground"
+                      : "bg-white/10 text-ink-foreground/50",
                   )}
                 >
                   {i <= 2 ? <BadgeCheck className="h-4 w-4" /> : i + 1}
@@ -275,9 +271,7 @@ function Index() {
                 >
                   {stage}
                 </span>
-                {i < 3 && (
-                  <span className="hidden h-px flex-1 bg-white/10 sm:block" aria-hidden />
-                )}
+                {i < 3 && <span className="hidden h-px flex-1 bg-white/10 sm:block" aria-hidden />}
               </div>
             ))}
           </div>
@@ -350,7 +344,11 @@ function Index() {
                 </svg>
                 App Store
               </Button>
-              <Button variant="goldOutline" size="lg" className="border-white/20 bg-white/5 text-ink-foreground hover:bg-white/10">
+              <Button
+                variant="goldOutline"
+                size="lg"
+                className="border-white/20 bg-white/5 text-ink-foreground hover:bg-white/10"
+              >
                 <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden>
                   <path d="M3.6 2.3c-.2.3-.3.7-.3 1.2v17c0 .5.1.9.3 1.2l9.2-9.7L3.6 2.3zm10.5 8.4 2.6-2.7L6.3 2.2c-.3-.2-.6-.2-.9-.1l8.7 8.6zm3.9 1.3 2.5-1.4c.7-.4.7-1.1 0-1.5l-2.5-1.4-2.8 2.9 2.8 2.9zM5.4 21.9c.3.1.6.1.9-.1l10.4-5.8-2.6-2.7-8.7 8.6z" />
                 </svg>
@@ -386,8 +384,8 @@ function Index() {
               Frequently asked questions
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Everything you need to know about trading on Zealex. Still curious? Our support team is
-              available 24/7.
+              Everything you need to know about trading on Zealex. Still curious? Our support team
+              is available 24/7.
             </p>
             <Button variant="gold" className="mt-6">
               <Headphones className="h-4 w-4" /> Contact support

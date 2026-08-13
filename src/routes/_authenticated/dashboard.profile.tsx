@@ -82,9 +82,7 @@ function ProfilePage() {
           {isLoading ? (
             <Skeleton className="h-6 w-40" />
           ) : (
-            <p className="truncate text-lg font-bold">
-              {profile?.full_name ?? "Zealex user"}
-            </p>
+            <p className="truncate text-lg font-bold">{profile?.full_name ?? "Zealex user"}</p>
           )}
           <p className="flex items-center gap-1.5 truncate text-sm text-muted-foreground">
             <Mail className="h-3.5 w-3.5" /> {profile?.email}

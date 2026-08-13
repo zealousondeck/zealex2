@@ -19,7 +19,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useHasPermission } from "@/lib/permissions";
 import { CryptoMarginPanel } from "@/components/admin/CryptoMarginPanel";
 
-
 export const Route = createFileRoute("/_authenticated/admin/rates")({
   component: RatesPage,
 });
@@ -51,7 +50,6 @@ function RatesPage() {
           <CryptoMarginPanel />
         </TabsContent>
       </Tabs>
-
     </div>
   );
 }
@@ -95,11 +93,33 @@ function CryptoRatesTable() {
       <div className="rounded-2xl border border-border bg-card p-4">
         <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">Add new</p>
         <div className="grid gap-2 md:grid-cols-6">
-          <Input placeholder="Symbol" value={draft.symbol ?? ""} onChange={(e) => setDraft({ ...draft, symbol: e.target.value })} />
-          <Input placeholder="Name" value={draft.name ?? ""} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-          <Input placeholder="Network" value={draft.network ?? ""} onChange={(e) => setDraft({ ...draft, network: e.target.value })} />
-          <Input type="number" placeholder="Buy ₦" value={draft.buy_rate ?? ""} onChange={(e) => setDraft({ ...draft, buy_rate: Number(e.target.value) })} />
-          <Input type="number" placeholder="Sell ₦" value={draft.sell_rate ?? ""} onChange={(e) => setDraft({ ...draft, sell_rate: Number(e.target.value) })} />
+          <Input
+            placeholder="Symbol"
+            value={draft.symbol ?? ""}
+            onChange={(e) => setDraft({ ...draft, symbol: e.target.value })}
+          />
+          <Input
+            placeholder="Name"
+            value={draft.name ?? ""}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+          />
+          <Input
+            placeholder="Network"
+            value={draft.network ?? ""}
+            onChange={(e) => setDraft({ ...draft, network: e.target.value })}
+          />
+          <Input
+            type="number"
+            placeholder="Buy ₦"
+            value={draft.buy_rate ?? ""}
+            onChange={(e) => setDraft({ ...draft, buy_rate: Number(e.target.value) })}
+          />
+          <Input
+            type="number"
+            placeholder="Sell ₦"
+            value={draft.sell_rate ?? ""}
+            onChange={(e) => setDraft({ ...draft, sell_rate: Number(e.target.value) })}
+          />
           <Button variant="gold" onClick={saveNew} disabled={upsert.isPending}>
             <Plus className="mr-1 h-4 w-4" /> Add
           </Button>
@@ -122,10 +142,20 @@ function CryptoRatesTable() {
             </thead>
             <tbody className="divide-y divide-border">
               {isLoading && (
-                <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Loading…</td></tr>
+                <tr>
+                  <td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">
+                    Loading…
+                  </td>
+                </tr>
               )}
               {(data ?? []).map((r) => (
-                <CryptoRow key={r.id} row={r} onSave={(patch) => upsert.mutateAsync({ ...r, ...patch })} onToggle={(v) => toggle.mutate({ id: r.id, is_active: v })} onDelete={() => del.mutate(r.id)} />
+                <CryptoRow
+                  key={r.id}
+                  row={r}
+                  onSave={(patch) => upsert.mutateAsync({ ...r, ...patch })}
+                  onToggle={(v) => toggle.mutate({ id: r.id, is_active: v })}
+                  onDelete={() => del.mutate(r.id)}
+                />
               ))}
             </tbody>
           </table>
@@ -155,16 +185,54 @@ function CryptoRow({
       <td className="px-3 py-2 font-bold">{row.symbol}</td>
       <td className="px-3 py-2">{row.name}</td>
       <td className="px-3 py-2 text-xs text-muted-foreground">{row.network}</td>
-      <td className="px-3 py-2"><Input type="number" className="h-8 w-28" value={buy} onChange={(e) => setBuy(Number(e.target.value))} /></td>
-      <td className="px-3 py-2"><Input type="number" className="h-8 w-28" value={sell} onChange={(e) => setSell(Number(e.target.value))} /></td>
-      <td className="px-3 py-2"><Input type="number" step="0.01" className="h-8 w-20" value={chg} onChange={(e) => setChg(Number(e.target.value))} /></td>
-      <td className="px-3 py-2"><Switch checked={row.is_active} onCheckedChange={onToggle} /></td>
+      <td className="px-3 py-2">
+        <Input
+          type="number"
+          className="h-8 w-28"
+          value={buy}
+          onChange={(e) => setBuy(Number(e.target.value))}
+        />
+      </td>
+      <td className="px-3 py-2">
+        <Input
+          type="number"
+          className="h-8 w-28"
+          value={sell}
+          onChange={(e) => setSell(Number(e.target.value))}
+        />
+      </td>
+      <td className="px-3 py-2">
+        <Input
+          type="number"
+          step="0.01"
+          className="h-8 w-20"
+          value={chg}
+          onChange={(e) => setChg(Number(e.target.value))}
+        />
+      </td>
+      <td className="px-3 py-2">
+        <Switch checked={row.is_active} onCheckedChange={onToggle} />
+      </td>
       <td className="px-3 py-2 text-right">
         <div className="flex justify-end gap-1">
-          <Button size="sm" variant="gold" disabled={!dirty} onClick={async () => { await onSave({ buy_rate: buy, sell_rate: sell, change_24h: chg }); toast.success("Saved"); }}>
+          <Button
+            size="sm"
+            variant="gold"
+            disabled={!dirty}
+            onClick={async () => {
+              await onSave({ buy_rate: buy, sell_rate: sell, change_24h: chg });
+              toast.success("Saved");
+            }}
+          >
             <Save className="h-3.5 w-3.5" />
           </Button>
-          <Button size="sm" variant="outline" onClick={() => { if (confirm(`Delete ${row.symbol}?`)) onDelete(); }}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              if (confirm(`Delete ${row.symbol}?`)) onDelete();
+            }}
+          >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -204,12 +272,38 @@ function GiftcardRatesTable() {
       <div className="rounded-2xl border border-border bg-card p-4">
         <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">Add new</p>
         <div className="grid gap-2 md:grid-cols-7">
-          <Input placeholder="Brand" value={draft.brand ?? ""} onChange={(e) => setDraft({ ...draft, brand: e.target.value })} />
-          <Input placeholder="Category" value={draft.category ?? ""} onChange={(e) => setDraft({ ...draft, category: e.target.value })} />
-          <Input placeholder="Currency" value={draft.currency ?? ""} onChange={(e) => setDraft({ ...draft, currency: e.target.value })} />
-          <Input placeholder="Type (Physical/E-code)" value={draft.card_type ?? ""} onChange={(e) => setDraft({ ...draft, card_type: e.target.value })} />
-          <Input type="number" placeholder="Buy ₦" value={draft.buy_rate ?? ""} onChange={(e) => setDraft({ ...draft, buy_rate: Number(e.target.value) })} />
-          <Input type="number" placeholder="Sell ₦" value={draft.sell_rate ?? ""} onChange={(e) => setDraft({ ...draft, sell_rate: Number(e.target.value) })} />
+          <Input
+            placeholder="Brand"
+            value={draft.brand ?? ""}
+            onChange={(e) => setDraft({ ...draft, brand: e.target.value })}
+          />
+          <Input
+            placeholder="Category"
+            value={draft.category ?? ""}
+            onChange={(e) => setDraft({ ...draft, category: e.target.value })}
+          />
+          <Input
+            placeholder="Currency"
+            value={draft.currency ?? ""}
+            onChange={(e) => setDraft({ ...draft, currency: e.target.value })}
+          />
+          <Input
+            placeholder="Type (Physical/E-code)"
+            value={draft.card_type ?? ""}
+            onChange={(e) => setDraft({ ...draft, card_type: e.target.value })}
+          />
+          <Input
+            type="number"
+            placeholder="Buy ₦"
+            value={draft.buy_rate ?? ""}
+            onChange={(e) => setDraft({ ...draft, buy_rate: Number(e.target.value) })}
+          />
+          <Input
+            type="number"
+            placeholder="Sell ₦"
+            value={draft.sell_rate ?? ""}
+            onChange={(e) => setDraft({ ...draft, sell_rate: Number(e.target.value) })}
+          />
           <Button variant="gold" onClick={saveNew} disabled={upsert.isPending}>
             <Plus className="mr-1 h-4 w-4" /> Add
           </Button>
@@ -231,9 +325,21 @@ function GiftcardRatesTable() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {isLoading && <tr><td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">Loading…</td></tr>}
+              {isLoading && (
+                <tr>
+                  <td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">
+                    Loading…
+                  </td>
+                </tr>
+              )}
               {(data ?? []).map((r) => (
-                <GiftRow key={r.id} row={r} onSave={(patch) => upsert.mutateAsync({ ...r, ...patch })} onToggle={(v) => toggle.mutate({ id: r.id, is_active: v })} onDelete={() => del.mutate(r.id)} />
+                <GiftRow
+                  key={r.id}
+                  row={r}
+                  onSave={(patch) => upsert.mutateAsync({ ...r, ...patch })}
+                  onToggle={(v) => toggle.mutate({ id: r.id, is_active: v })}
+                  onDelete={() => del.mutate(r.id)}
+                />
               ))}
             </tbody>
           </table>
@@ -263,15 +369,45 @@ function GiftRow({
       <td className="px-3 py-2 text-xs text-muted-foreground">{row.category}</td>
       <td className="px-3 py-2">{row.currency}</td>
       <td className="px-3 py-2 text-xs">{row.card_type}</td>
-      <td className="px-3 py-2"><Input type="number" className="h-8 w-24" value={buy} onChange={(e) => setBuy(Number(e.target.value))} /></td>
-      <td className="px-3 py-2"><Input type="number" className="h-8 w-24" value={sell} onChange={(e) => setSell(Number(e.target.value))} /></td>
-      <td className="px-3 py-2"><Switch checked={row.is_active} onCheckedChange={onToggle} /></td>
+      <td className="px-3 py-2">
+        <Input
+          type="number"
+          className="h-8 w-24"
+          value={buy}
+          onChange={(e) => setBuy(Number(e.target.value))}
+        />
+      </td>
+      <td className="px-3 py-2">
+        <Input
+          type="number"
+          className="h-8 w-24"
+          value={sell}
+          onChange={(e) => setSell(Number(e.target.value))}
+        />
+      </td>
+      <td className="px-3 py-2">
+        <Switch checked={row.is_active} onCheckedChange={onToggle} />
+      </td>
       <td className="px-3 py-2 text-right">
         <div className="flex justify-end gap-1">
-          <Button size="sm" variant="gold" disabled={!dirty} onClick={async () => { await onSave({ buy_rate: buy, sell_rate: sell }); toast.success("Saved"); }}>
+          <Button
+            size="sm"
+            variant="gold"
+            disabled={!dirty}
+            onClick={async () => {
+              await onSave({ buy_rate: buy, sell_rate: sell });
+              toast.success("Saved");
+            }}
+          >
             <Save className="h-3.5 w-3.5" />
           </Button>
-          <Button size="sm" variant="outline" onClick={() => { if (confirm(`Delete ${row.brand}?`)) onDelete(); }}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              if (confirm(`Delete ${row.brand}?`)) onDelete();
+            }}
+          >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>

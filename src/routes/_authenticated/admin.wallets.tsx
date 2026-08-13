@@ -37,7 +37,12 @@ function WalletsPage() {
         </div>
         <div className="relative w-full sm:w-72">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search user" className="pl-9" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search user"
+            className="pl-9"
+          />
         </div>
       </div>
 
@@ -65,10 +70,14 @@ function WalletsPage() {
                 <tr key={w.id} className="hover:bg-secondary/30">
                   <td className="px-4 py-3">
                     <p className="font-semibold">{w.profile?.full_name ?? "—"}</p>
-                    <p className="text-xs text-muted-foreground">{w.profile?.email ?? w.user_id.slice(0, 8)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {w.profile?.email ?? w.user_id.slice(0, 8)}
+                    </p>
                   </td>
                   <td className="px-4 py-3 font-mono text-xs">{w.currency}</td>
-                  <td className="px-4 py-3 font-bold">{nairaFormatter.format(Number(w.balance))}</td>
+                  <td className="px-4 py-3 font-bold">
+                    {nairaFormatter.format(Number(w.balance))}
+                  </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {new Date(w.updated_at).toLocaleString()}
                   </td>
@@ -153,11 +162,21 @@ function AdjustDialog({ wallet, onClose }: { wallet: Row; onClose: () => void })
           </div>
           <div className="space-y-2">
             <Label htmlFor="amt">Amount (NGN)</Label>
-            <Input id="amt" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Input
+              id="amt"
+              inputMode="decimal"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="rn">Reason</Label>
-            <Input id="rn" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} />
+            <Input
+              id="rn"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              maxLength={200}
+            />
           </div>
         </div>
         <div className="flex justify-end gap-2 border-t border-border p-4">

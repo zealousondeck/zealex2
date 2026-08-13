@@ -27,7 +27,9 @@ export function CryptoMarginPanel() {
   const [addr, setAddr] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    setDraft(Object.fromEntries(SUPPORTED_COINS.map((c) => [c.symbol, String(margins[c.symbol] ?? 0)])));
+    setDraft(
+      Object.fromEntries(SUPPORTED_COINS.map((c) => [c.symbol, String(margins[c.symbol] ?? 0)])),
+    );
   }, [JSON.stringify(margins)]);
 
   useEffect(() => {
@@ -41,7 +43,8 @@ export function CryptoMarginPanel() {
     const payload: Record<string, number> = {};
     for (const c of SUPPORTED_COINS) {
       const v = Number(draft[c.symbol]);
-      if (!Number.isFinite(v) || v < 0 || v > 50) return toast.error(`Invalid margin for ${c.symbol}`);
+      if (!Number.isFinite(v) || v < 0 || v > 50)
+        return toast.error(`Invalid margin for ${c.symbol}`);
       payload[c.symbol] = v;
     }
     try {
@@ -82,7 +85,10 @@ export function CryptoMarginPanel() {
               symbol: c.symbol,
               amount: 1,
               prices: market.data?.prices,
-              margins: { ...margins, [c.symbol]: Number(draft[c.symbol] ?? margins[c.symbol] ?? 0) },
+              margins: {
+                ...margins,
+                [c.symbol]: Number(draft[c.symbol] ?? margins[c.symbol] ?? 0),
+              },
             });
             return (
               <div key={c.symbol} className="rounded-xl border border-border bg-secondary/30 p-3">

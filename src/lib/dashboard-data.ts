@@ -115,18 +115,12 @@ export function useRealtimeSync() {
   useEffect(() => {
     const channel = supabase
       .channel("dashboard-sync")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "transactions" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["transactions"] });
-          queryClient.invalidateQueries({ queryKey: ["wallet"] });
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notifications" },
-        () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["transactions"] });
+        queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () =>
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
       )
       .subscribe();
     return () => {
@@ -139,14 +133,10 @@ export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ read: true })
-        .eq("id", id);
+      const { error } = await supabase.from("notifications").update({ read: true }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });
 }
 
@@ -160,7 +150,6 @@ export function useMarkAllNotificationsRead() {
         .eq("read", false);
       if (error) throw error;
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });
 }

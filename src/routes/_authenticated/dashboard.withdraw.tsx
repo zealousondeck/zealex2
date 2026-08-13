@@ -20,7 +20,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { nairaFormatter } from "@/lib/market-data";
-import { listNigerianBanks, resolveBankAccount, submitWithdrawal } from "@/lib/withdrawals.functions";
+import {
+  listNigerianBanks,
+  resolveBankAccount,
+  submitWithdrawal,
+} from "@/lib/withdrawals.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/dashboard/withdraw")({
@@ -159,7 +163,6 @@ function WithdrawPage() {
     // Guard against double submits (double click / re-render / enter key).
     if (submitMut.isPending) return;
     submitMut.mutate();
-
   }
 
   return (
@@ -218,7 +221,12 @@ function WithdrawPage() {
             ) : banksQuery.isError ? (
               <div className="flex items-center gap-2">
                 <p className="text-sm text-destructive">Banks unavailable.</p>
-                <Button type="button" size="sm" variant="outline" onClick={() => banksQuery.refetch()}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => banksQuery.refetch()}
+                >
                   <RefreshCw className="mr-1 h-3.5 w-3.5" /> Retry
                 </Button>
               </div>

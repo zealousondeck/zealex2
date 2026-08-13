@@ -32,10 +32,7 @@ function ReferralsPage() {
   const { data: leaderboard = [] } = useQuery({
     queryKey: ["referral-leaderboard"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("referral_leaderboard")
-        .select("*")
-        .limit(20);
+      const { data } = await supabase.from("referral_leaderboard").select("*").limit(20);
       return (data ?? []) as LeaderRow[];
     },
   });
@@ -55,9 +52,7 @@ function ReferralsPage() {
     },
   });
 
-  const myRank = profile
-    ? leaderboard.findIndex((r) => r.referrer_id === profile.id) + 1
-    : 0;
+  const myRank = profile ? leaderboard.findIndex((r) => r.referrer_id === profile.id) + 1 : 0;
   const myEarnings = myReferrals.reduce((s, r) => s + Number(r.earnings), 0);
   const code = profile?.referral_code ?? "—";
   const link = typeof window !== "undefined" ? `${window.location.origin}/auth?ref=${code}` : "";
@@ -95,9 +90,7 @@ function ReferralsPage() {
         </h2>
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
           {leaderboard.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">
-              Be the first to invite a friend!
-            </p>
+            <p className="p-6 text-sm text-muted-foreground">Be the first to invite a friend!</p>
           ) : (
             <ul className="divide-y divide-border">
               {leaderboard.map((row, i) => {
@@ -105,10 +98,7 @@ function ReferralsPage() {
                 return (
                   <li
                     key={row.referrer_id}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3",
-                      isMe && "bg-gold-soft",
-                    )}
+                    className={cn("flex items-center gap-3 px-4 py-3", isMe && "bg-gold-soft")}
                   >
                     <span
                       className={cn(
@@ -153,9 +143,7 @@ function ReferralsPage() {
               {myReferrals.map((r) => (
                 <li key={r.id} className="flex items-center justify-between px-4 py-3 text-sm">
                   <div>
-                    <p className="font-semibold">
-                      User {r.referred_user_id.slice(0, 8)}
-                    </p>
+                    <p className="font-semibold">User {r.referred_user_id.slice(0, 8)}</p>
                     <p className="text-xs text-muted-foreground">
                       Joined {new Date(r.created_at).toLocaleDateString()}
                     </p>

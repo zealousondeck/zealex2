@@ -27,7 +27,11 @@ export function RateCalculator() {
       return { rate: asset.buyRate, unitLabel: asset.symbol, payout: value * asset.buyRate };
     }
     const card = giftCards.find((c) => c.brand === cardBrand) ?? giftCards[0];
-    return { rate: card.ratePerUnit, unitLabel: `${card.currency} value`, payout: value * card.ratePerUnit };
+    return {
+      rate: card.ratePerUnit,
+      unitLabel: `${card.currency} value`,
+      payout: value * card.ratePerUnit,
+    };
   }, [mode, cryptoSymbol, cardBrand, amount]);
 
   return (
@@ -110,7 +114,10 @@ export function RateCalculator() {
           <span className="text-muted-foreground">Current rate</span>
           <span className="font-semibold">
             {nairaFormatter.format(rate)}
-            <span className="text-muted-foreground"> / {mode === "crypto" ? unitLabel : "unit"}</span>
+            <span className="text-muted-foreground">
+              {" "}
+              / {mode === "crypto" ? unitLabel : "unit"}
+            </span>
           </span>
         </div>
 

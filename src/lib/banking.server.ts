@@ -50,7 +50,6 @@ export async function fetchNigerianBanks(): Promise<BankOption[]> {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-
 /**
  * Resolve a NUBAN to its registered account name.
  * Never throws for provider-side limitations: Paystack answers account
@@ -88,7 +87,6 @@ export async function resolveNubanAccount(
       unavailable: true,
     };
   }
-
 
   const payload = (await res.json().catch(() => null)) as {
     status?: boolean;

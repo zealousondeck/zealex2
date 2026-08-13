@@ -22,10 +22,22 @@ const STATUS_TONE: Record<string, string> = {
   cancelled: "bg-muted text-muted-foreground",
 };
 
-const STATUS_FILTERS = ["pending", "processing", "completed", "rejected", "cancelled", "all"] as const;
+const STATUS_FILTERS = [
+  "pending",
+  "processing",
+  "completed",
+  "rejected",
+  "cancelled",
+  "all",
+] as const;
 
-
-export function TradeConsole({ category, title }: { category: "crypto" | "giftcard"; title: string }) {
+export function TradeConsole({
+  category,
+  title,
+}: {
+  category: "crypto" | "giftcard";
+  title: string;
+}) {
   const { allowed } = useHasPermission("manage_transactions");
   const [status, setStatus] = useState("pending");
   const { data, isLoading } = useAdminTransactions({ status, category });
@@ -58,7 +70,13 @@ export function TradeConsole({ category, title }: { category: "crypto" | "giftca
     if ((s === "rejected" || s === "cancelled") && !notes.trim())
       return toast.error("Reviewer note required");
     const stage =
-      s === "completed" ? "paid" : s === "processing" ? "under_review" : s === "cancelled" ? "cancelled" : "under_review";
+      s === "completed"
+        ? "paid"
+        : s === "processing"
+          ? "under_review"
+          : s === "cancelled"
+            ? "cancelled"
+            : "under_review";
     try {
       await mut.mutateAsync({
         id: selected.id,
@@ -82,7 +100,6 @@ export function TradeConsole({ category, title }: { category: "crypto" | "giftca
     }
   }
 
-
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -97,7 +114,9 @@ export function TradeConsole({ category, title }: { category: "crypto" | "giftca
               onClick={() => setStatus(s)}
               className={cn(
                 "rounded-lg px-3 py-1.5 text-xs font-bold uppercase",
-                status === s ? "bg-gold text-gold-foreground" : "text-muted-foreground hover:text-foreground",
+                status === s
+                  ? "bg-gold text-gold-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {s}
@@ -121,24 +140,48 @@ export function TradeConsole({ category, title }: { category: "crypto" | "giftca
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {isLoading && <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">Loading…</td></tr>}
+              {isLoading && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-6 text-center text-muted-foreground">
+                    Loading…
+                  </td>
+                </tr>
+              )}
               {(data ?? []).map((t) => (
                 <tr key={t.id} className="hover:bg-secondary/30">
                   <td className="px-4 py-3 font-mono text-xs">{t.reference}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{t.user_id.slice(0, 8)}…</td>
-                  <td className="px-4 py-3"><p className="font-semibold">{t.asset}</p><p className="text-xs uppercase text-muted-foreground">{t.type}</p></td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {t.user_id.slice(0, 8)}…
+                  </td>
+                  <td className="px-4 py-3">
+                    <p className="font-semibold">{t.asset}</p>
+                    <p className="text-xs uppercase text-muted-foreground">{t.type}</p>
+                  </td>
                   <td className="px-4 py-3 font-bold">{nairaFormatter.format(Number(t.amount))}</td>
                   <td className="px-4 py-3 text-xs">{t.quantity ?? "—"}</td>
                   <td className="px-4 py-3">
-                    <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold uppercase", STATUS_TONE[t.status] ?? "bg-secondary")}>{t.status}</span>
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase",
+                        STATUS_TONE[t.status] ?? "bg-secondary",
+                      )}
+                    >
+                      {t.status}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Button size="sm" variant="outline" onClick={() => openTx(t)}>Open</Button>
+                    <Button size="sm" variant="outline" onClick={() => openTx(t)}>
+                      Open
+                    </Button>
                   </td>
                 </tr>
               ))}
               {!isLoading && (data ?? []).length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No orders.</td></tr>
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                    No orders.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -165,7 +208,11 @@ export function TradeConsole({ category, title }: { category: "crypto" | "giftca
                 <p className="mb-1 text-xs font-bold uppercase text-muted-foreground">Proof</p>
                 {proofUrl ? (
                   <a href={proofUrl} target="_blank" rel="noreferrer" className="block">
-                    <img src={proofUrl} alt="proof" className="max-h-64 w-full rounded-xl border border-border object-contain" />
+                    <img
+                      src={proofUrl}
+                      alt="proof"
+                      className="max-h-64 w-full rounded-xl border border-border object-contain"
+                    />
                   </a>
                 ) : (
                   <p className="rounded-xl border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
@@ -175,20 +222,34 @@ export function TradeConsole({ category, title }: { category: "crypto" | "giftca
               </div>
 
               <div>
-                <p className="mb-1 text-xs font-bold uppercase text-muted-foreground">Reviewer notes</p>
-                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Note visible in audit log; required for rejection." />
+                <p className="mb-1 text-xs font-bold uppercase text-muted-foreground">
+                  Reviewer notes
+                </p>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Note visible in audit log; required for rejection."
+                />
               </div>
 
               {(selected.status === "pending" || selected.status === "processing") && (
                 <div className="flex flex-wrap justify-end gap-2">
-                  <Button variant="outline" onClick={() => decide("cancelled")}>Cancel</Button>
-                  <Button variant="outline" onClick={() => decide("rejected")}>Reject</Button>
+                  <Button variant="outline" onClick={() => decide("cancelled")}>
+                    Cancel
+                  </Button>
+                  <Button variant="outline" onClick={() => decide("rejected")}>
+                    Reject
+                  </Button>
                   {selected.status === "pending" && (
-                    <Button variant="secondary" onClick={() => decide("processing")}>Mark processing</Button>
+                    <Button variant="secondary" onClick={() => decide("processing")}>
+                      Mark processing
+                    </Button>
                   )}
-                  <Button variant="gold" onClick={() => decide("completed")}>Approve & Complete</Button>
+                  <Button variant="gold" onClick={() => decide("completed")}>
+                    Approve & Complete
+                  </Button>
                 </div>
-
               )}
             </div>
           )}
@@ -201,7 +262,9 @@ export function TradeConsole({ category, title }: { category: "crypto" | "giftca
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border bg-secondary/30 px-3 py-2">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
       <p className="mt-0.5 break-all font-semibold">{value}</p>
     </div>
   );

@@ -75,13 +75,7 @@ function NotificationsPage() {
   );
 }
 
-function NotificationRow({
-  n,
-  onRead,
-}: {
-  n: AppNotification;
-  onRead: () => void;
-}) {
+function NotificationRow({ n, onRead }: { n: AppNotification; onRead: () => void }) {
   const Icon = iconFor(n.category);
   return (
     <li
@@ -98,9 +92,7 @@ function NotificationRow({
           <p className="font-semibold">{n.title}</p>
           {!n.read && <span className="h-2 w-2 shrink-0 rounded-full bg-gold" />}
         </div>
-        {n.body && (
-          <p className="mt-0.5 text-sm text-muted-foreground">{n.body}</p>
-        )}
+        {n.body && <p className="mt-0.5 text-sm text-muted-foreground">{n.body}</p>}
         <p className="mt-1 text-xs text-muted-foreground">
           {new Date(n.created_at).toLocaleString(undefined, {
             month: "short",

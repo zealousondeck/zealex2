@@ -100,7 +100,9 @@ function UsersPage() {
                         </div>
                         <div className="min-w-0">
                           <p className="truncate font-semibold">{u.full_name ?? "—"}</p>
-                          <p className="truncate text-xs text-muted-foreground">{u.id.slice(0, 8)}…</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {u.id.slice(0, 8)}…
+                          </p>
                         </div>
                       </div>
                     </td>

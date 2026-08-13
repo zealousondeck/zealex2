@@ -8,7 +8,9 @@ type Tick = { label: string; value: string; change: number };
 function buildTicks(jitter: number): Tick[] {
   const crypto = cryptoAssets.map((c) => ({
     label: c.symbol,
-    value: nairaFormatter.format(Math.round(c.buyRate * (1 + jitter * (c.change24h >= 0 ? 1 : -1) * 0.0004))),
+    value: nairaFormatter.format(
+      Math.round(c.buyRate * (1 + jitter * (c.change24h >= 0 ? 1 : -1) * 0.0004)),
+    ),
     change: +(c.change24h + jitter * 0.02 * (c.change24h >= 0 ? 1 : -1)).toFixed(2),
   }));
   const cards = giftCards.slice(0, 5).map((g) => ({

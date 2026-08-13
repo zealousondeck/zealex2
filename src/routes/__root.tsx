@@ -96,9 +96,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Zealex" },
       { name: "twitter:title", content: "Zealex Exchange — Trade Gift Cards & Crypto Instantly" },
-      { name: "twitter:description", content: "Zealex Exchange is a premium platform to trade gift cards and cryptocurrency at the best rates. Fast payouts, bank-grade security, and 24/7 support." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/74021bc3-84ad-406d-b818-e6db16ba7857/id-preview-037eb633--b2eef918-7243-48ec-b53c-3839d5d6baca.lovable.app-1783949892402.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/74021bc3-84ad-406d-b818-e6db16ba7857/id-preview-037eb633--b2eef918-7243-48ec-b53c-3839d5d6baca.lovable.app-1783949892402.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Zealex Exchange is a premium platform to trade gift cards and cryptocurrency at the best rates. Fast payouts, bank-grade security, and 24/7 support.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/74021bc3-84ad-406d-b818-e6db16ba7857/id-preview-037eb633--b2eef918-7243-48ec-b53c-3839d5d6baca.lovable.app-1783949892402.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/74021bc3-84ad-406d-b818-e6db16ba7857/id-preview-037eb633--b2eef918-7243-48ec-b53c-3839d5d6baca.lovable.app-1783949892402.png",
+      },
     ],
     links: [
       {
@@ -157,4 +169,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-

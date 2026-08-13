@@ -1,14 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-const STAFF_ROLES = [
-  "admin",
-  "super_admin",
-  "finance",
-  "support",
-  "kyc_officer",
-  "moderator",
-];
+const STAFF_ROLES = ["admin", "super_admin", "finance", "support", "kyc_officer", "moderator"];
 
 export function useIsAdmin() {
   return useQuery({
@@ -19,10 +12,7 @@ export function useIsAdmin() {
 
       if (!uid) return false;
 
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", uid);
+      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", uid);
 
       if (error) {
         console.error(error);

@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useAdminWithdrawals, useUpdateWithdrawalStatus, type AdminWithdrawal } from "@/lib/admin-data";
+import {
+  useAdminWithdrawals,
+  useUpdateWithdrawalStatus,
+  type AdminWithdrawal,
+} from "@/lib/admin-data";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -39,7 +43,9 @@ function WithdrawalsPage() {
             onClick={() => setTab(t)}
             className={cn(
               "flex-1 rounded-lg px-3 py-1.5 font-semibold capitalize transition-colors",
-              t === tab ? "bg-gold text-gold-foreground" : "text-muted-foreground hover:bg-secondary",
+              t === tab
+                ? "bg-gold text-gold-foreground"
+                : "text-muted-foreground hover:bg-secondary",
             )}
           >
             {t}
@@ -71,10 +77,17 @@ function WithdrawalsPage() {
               {(data ?? []).map((d) => (
                 <tr key={d.id} className="hover:bg-secondary/30">
                   <td className="px-4 py-3 font-mono text-xs">{d.reference}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{d.user_id.slice(0, 8)}…</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {d.user_id.slice(0, 8)}…
+                  </td>
                   <td className="px-4 py-3 font-bold">{nairaFormatter.format(Number(d.amount))}</td>
                   <td className="px-4 py-3">
-                    <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold uppercase", TONE[d.status] ?? "bg-secondary")}>
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase",
+                        TONE[d.status] ?? "bg-secondary",
+                      )}
+                    >
                       {d.status}
                     </span>
                   </td>
@@ -105,7 +118,13 @@ function WithdrawalsPage() {
   );
 }
 
-function WithdrawDialog({ withdrawal, onClose }: { withdrawal: AdminWithdrawal; onClose: () => void }) {
+function WithdrawDialog({
+  withdrawal,
+  onClose,
+}: {
+  withdrawal: AdminWithdrawal;
+  onClose: () => void;
+}) {
   const [note, setNote] = useState(withdrawal.note ?? "");
   const mut = useUpdateWithdrawalStatus();
 
@@ -164,7 +183,13 @@ function WithdrawDialog({ withdrawal, onClose }: { withdrawal: AdminWithdrawal; 
         </div>
         <div className="space-y-3 border-t border-border p-5">
           <Label htmlFor="rn">Reviewer note / reference</Label>
-          <Textarea id="rn" rows={2} value={note} onChange={(e) => setNote(e.target.value)} maxLength={400} />
+          <Textarea
+            id="rn"
+            rows={2}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={400}
+          />
           <div className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={() => decide("rejected")} disabled={mut.isPending}>
               Reject & refund

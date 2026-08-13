@@ -86,10 +86,20 @@ function SendCard() {
       <div className="space-y-2">
         <Label>Audience</Label>
         <div className="flex gap-2">
-          <Button variant={audience === "all" ? "gold" : "outline"} size="sm" className="flex-1" onClick={() => setAudience("all")}>
+          <Button
+            variant={audience === "all" ? "gold" : "outline"}
+            size="sm"
+            className="flex-1"
+            onClick={() => setAudience("all")}
+          >
             All users
           </Button>
-          <Button variant={audience === "one" ? "gold" : "outline"} size="sm" className="flex-1" onClick={() => setAudience("one")}>
+          <Button
+            variant={audience === "one" ? "gold" : "outline"}
+            size="sm"
+            className="flex-1"
+            onClick={() => setAudience("one")}
+          >
             Single user
           </Button>
         </div>
@@ -100,7 +110,12 @@ function SendCard() {
           <Label>Search user</Label>
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input className="pl-8" placeholder="Name or email" value={userSearch} onChange={(e) => setUserSearch(e.target.value)} />
+            <Input
+              className="pl-8"
+              placeholder="Name or email"
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+            />
           </div>
           <div className="max-h-40 overflow-y-auto rounded-xl border border-border">
             {(users ?? []).slice(0, 20).map((u) => (
@@ -113,7 +128,9 @@ function SendCard() {
                 <span className="text-muted-foreground">{u.email}</span>
               </button>
             ))}
-            {(users ?? []).length === 0 && <p className="p-3 text-xs text-muted-foreground">No users</p>}
+            {(users ?? []).length === 0 && (
+              <p className="p-3 text-xs text-muted-foreground">No users</p>
+            )}
           </div>
         </div>
       )}
@@ -121,7 +138,9 @@ function SendCard() {
       <div className="space-y-2">
         <Label>Category</Label>
         <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="system">System</SelectItem>
             <SelectItem value="promo">Promotion</SelectItem>
@@ -133,11 +152,20 @@ function SendCard() {
 
       <div className="space-y-2">
         <Label>Title</Label>
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Scheduled maintenance" />
+        <Input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Scheduled maintenance"
+        />
       </div>
       <div className="space-y-2">
         <Label>Message</Label>
-        <Textarea rows={4} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Details users should know…" />
+        <Textarea
+          rows={4}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="Details users should know…"
+        />
       </div>
 
       <div className="space-y-2 rounded-xl border border-border bg-secondary/30 p-3">
@@ -148,7 +176,9 @@ function SendCard() {
         <label className="flex items-center gap-2 text-sm font-semibold">
           <Checkbox checked={emailOpt} onCheckedChange={(v) => setEmailOpt(!!v)} />
           Also send email
-          <span className="text-[10px] font-normal text-muted-foreground">(requires email domain setup)</span>
+          <span className="text-[10px] font-normal text-muted-foreground">
+            (requires email domain setup)
+          </span>
         </label>
       </div>
 
@@ -171,10 +201,17 @@ function HistoryCard() {
         <div className="flex gap-2">
           <div className="relative">
             <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input className="pl-8" placeholder="Search title/body" value={q} onChange={(e) => setQ(e.target.value)} />
+            <Input
+              className="pl-8"
+              placeholder="Search title/body"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
           </div>
           <Select value={cat} onValueChange={setCat}>
-            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All</SelectItem>
               <SelectItem value="system">System</SelectItem>
@@ -194,7 +231,9 @@ function HistoryCard() {
           {(data ?? []).map((n) => (
             <li key={n.id} className="px-4 py-3 text-sm">
               <div className="flex items-center gap-2">
-                <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold uppercase">{n.category}</span>
+                <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold uppercase">
+                  {n.category}
+                </span>
                 <p className="font-semibold">{n.title}</p>
                 {!n.read && <span className="ml-auto text-[10px] font-bold text-gold">UNREAD</span>}
               </div>

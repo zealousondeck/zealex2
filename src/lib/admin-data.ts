@@ -421,10 +421,7 @@ export function useUpdateTransactionStatus() {
       /** Credit the user's NGN wallet when the order is completed (crypto/gift card sells). */
       credit?: boolean;
     }) => {
-      const { error } = await supabase
-        .from("transactions")
-        .update({ status, stage })
-        .eq("id", id);
+      const { error } = await supabase.from("transactions").update({ status, stage }).eq("id", id);
       if (error) throw error;
 
       let credited = false;
@@ -438,11 +435,18 @@ export function useUpdateTransactionStatus() {
         if (wallet) {
           const { error: wErr } = await supabase
             .from("wallets")
-            .update({ balance: Number(wallet.balance) + amount, updated_at: new Date().toISOString() })
+            .update({
+              balance: Number(wallet.balance) + amount,
+              updated_at: new Date().toISOString(),
+            })
             .eq("id", wallet.id);
           if (wErr) throw wErr;
           credited = true;
-          await logAudit("wallet.credit", "wallets", wallet.id, { amount, source: "transaction", id });
+          await logAudit("wallet.credit", "wallets", wallet.id, {
+            amount,
+            source: "transaction",
+            id,
+          });
         }
       }
 
@@ -461,11 +465,16 @@ export function useUpdateTransactionStatus() {
   });
 }
 
-
 export function useSetProfileStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: "active" | "suspended" | "banned" }) => {
+    mutationFn: async ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: "active" | "suspended" | "banned";
+    }) => {
       const { error } = await supabase
         .from("profiles")
         .update({ account_status: status })
@@ -533,7 +542,9 @@ export function useGrantRole() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: role as any });
+      const { error } = await supabase
+        .from("user_roles")
+        .insert({ user_id: userId, role: role as any });
       if (error && !error.message.includes("duplicate")) throw error;
       await logAudit("role.grant", "user_roles", userId, { role });
     },

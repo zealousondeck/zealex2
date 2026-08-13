@@ -98,7 +98,13 @@ export function PaymentMethodManager({
   );
 }
 
-function AddForm({ defaultType, onClose }: { defaultType: "bank" | "wallet"; onClose: () => void }) {
+function AddForm({
+  defaultType,
+  onClose,
+}: {
+  defaultType: "bank" | "wallet";
+  onClose: () => void;
+}) {
   const add = useAddPaymentMethod();
   const [type, setType] = useState<"bank" | "wallet">(defaultType);
   const [label, setLabel] = useState("");
@@ -134,7 +140,9 @@ function AddForm({ defaultType, onClose }: { defaultType: "bank" | "wallet"; onC
         <div className="space-y-1.5">
           <Label>Type</Label>
           <Select value={type} onValueChange={(v) => setType(v as "bank" | "wallet")}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="bank">Bank account</SelectItem>
               <SelectItem value="wallet">Crypto wallet</SelectItem>
@@ -143,7 +151,12 @@ function AddForm({ defaultType, onClose }: { defaultType: "bank" | "wallet"; onC
         </div>
         <div className="space-y-1.5">
           <Label>Label</Label>
-          <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. GTB main" maxLength={40} />
+          <Input
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder="e.g. GTB main"
+            maxLength={40}
+          />
         </div>
       </div>
 
@@ -155,11 +168,19 @@ function AddForm({ defaultType, onClose }: { defaultType: "bank" | "wallet"; onC
           </div>
           <div className="space-y-1.5">
             <Label>Account number</Label>
-            <Input value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} maxLength={20} />
+            <Input
+              value={accountNumber}
+              onChange={(e) => setAccountNumber(e.target.value)}
+              maxLength={20}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Account name</Label>
-            <Input value={accountName} onChange={(e) => setAccountName(e.target.value)} maxLength={80} />
+            <Input
+              value={accountName}
+              onChange={(e) => setAccountName(e.target.value)}
+              maxLength={80}
+            />
           </div>
         </div>
       ) : (
@@ -167,7 +188,9 @@ function AddForm({ defaultType, onClose }: { defaultType: "bank" | "wallet"; onC
           <div className="space-y-1.5">
             <Label>Network</Label>
             <Select value={walletNetwork} onValueChange={setWalletNetwork}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="BTC">Bitcoin</SelectItem>
                 <SelectItem value="ETH">Ethereum (ERC20)</SelectItem>
@@ -179,14 +202,22 @@ function AddForm({ defaultType, onClose }: { defaultType: "bank" | "wallet"; onC
           </div>
           <div className="space-y-1.5">
             <Label>Address</Label>
-            <Input value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} maxLength={120} />
+            <Input
+              value={walletAddress}
+              onChange={(e) => setWalletAddress(e.target.value)}
+              maxLength={120}
+            />
           </div>
         </div>
       )}
 
       <div className="flex gap-2">
-        <Button type="submit" variant="gold" size="sm" disabled={add.isPending}>Save</Button>
-        <Button type="button" variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+        <Button type="submit" variant="gold" size="sm" disabled={add.isPending}>
+          Save
+        </Button>
+        <Button type="button" variant="outline" size="sm" onClick={onClose}>
+          Cancel
+        </Button>
       </div>
     </form>
   );

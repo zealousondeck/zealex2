@@ -220,12 +220,7 @@ function ExchangePage() {
           </div>
         </div>
 
-        <Button
-          type="submit"
-          variant="gold"
-          className="w-full font-bold"
-          disabled={submitting}
-        >
+        <Button type="submit" variant="gold" className="w-full font-bold" disabled={submitting}>
           {submitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing…
