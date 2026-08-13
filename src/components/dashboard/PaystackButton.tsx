@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getPaystackPublicKey, verifyPaystackPayment } from "@/lib/paystack.functions";
+import { clearAttempt, recordAttempt, updateAttempt } from "@/lib/deposit-attempts";
 
 declare global {
   interface Window {
@@ -46,54 +47,56 @@ function loadScript(): Promise<void> {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
- * Pending references survive reloads so a refresh mid-payment resumes
- * verification instead of losing the deposit. The server RPC keys on the
- * Paystack reference, so replaying verification can never credit twice.
+ * Explicitly verify one reference. Idempotent: the server keys on the Paystack
+ * reference so a replay can never credit the wallet twice.
  */
-const PENDING_KEY = "zealex.paystack.pending";
-
-type PendingPayment = { reference: string; amount: number };
-
-function readPending(): PendingPayment | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(PENDING_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as PendingPayment;
-    return parsed?.reference ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-function writePending(value: PendingPayment | null) {
-  if (typeof window === "undefined") return;
-  try {
-    if (value) window.localStorage.setItem(PENDING_KEY, JSON.stringify(value));
-    else window.localStorage.removeItem(PENDING_KEY);
-  } catch {
-    /* storage unavailable — verification still works in-session */
-  }
+export function useVerifyDeposit() {
+  const verify = useServerFn(verifyPaystackPayment);
+  return useCallback(
+    async (reference: string, expected: number, opts?: { retries?: number }) => {
+      const MAX = opts?.retries ?? 1;
+      let lastError = "Verification failed";
+      const isFinal = (m: string) =>
+        /not completed|declined|misconfigured|Only Naira|zero payment/i.test(m);
+      for (let attempt = 0; attempt < MAX; attempt++) {
+        try {
+          const res = await verify({ data: { reference, expectedAmount: expected } });
+          clearAttempt(reference);
+          return { ok: true as const, duplicate: Boolean(res.duplicate) };
+        } catch (err) {
+          lastError = err instanceof Error ? err.message : lastError;
+          if (isFinal(lastError)) {
+            updateAttempt(reference, { status: "failed", reason: lastError });
+            return { ok: false as const, message: lastError, final: true };
+          }
+          if (attempt < MAX - 1) await sleep(1500 * (attempt + 1));
+        }
+      }
+      updateAttempt(reference, { status: "pending", reason: lastError });
+      return { ok: false as const, message: lastError, final: false };
+    },
+    [verify],
+  );
 }
 
 export function PaystackButton({
   amount,
   onSuccess,
+  onSettled,
   disabled,
 }: {
   amount: number;
   onSuccess?: () => void;
+  onSettled?: () => void;
   disabled?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState<"idle" | "checkout" | "verifying" | "done">("idle");
   const [publicKey, setPublicKey] = useState<string | null>(null);
   const [keyError, setKeyError] = useState(false);
-  const [pending, setPending] = useState<PendingPayment | null>(null);
   const mounted = useRef(true);
-  const verifying = useRef(false);
   const fetchKey = useServerFn(getPaystackPublicKey);
-  const verify = useServerFn(verifyPaystackPayment);
+  const verifyDeposit = useVerifyDeposit();
 
   useEffect(() => {
     mounted.current = true;
@@ -116,70 +119,6 @@ export function PaystackButton({
     loadKey();
   }, [loadKey]);
 
-  /** Verify with retries — Paystack settles a moment after the popup closes. */
-  const runVerification = useCallback(
-    async (reference: string, expected: number) => {
-      // Guard against overlapping verifications (double clicks, retries,
-      // resume-on-mount racing the callback).
-      if (verifying.current) return false;
-      verifying.current = true;
-      const record = { reference, amount: expected };
-      setPending(record);
-      writePending(record);
-      setPhase("verifying");
-      let lastError = "Verification failed";
-      // Non-retryable outcomes must stop the loop and clear the pending payment.
-      const isFinal = (m: string) =>
-        /not completed|declined|misconfigured|Only Naira|zero payment/i.test(m);
-      const MAX = 6;
-      try {
-        for (let attempt = 0; attempt < MAX; attempt++) {
-          try {
-            const res = await verify({ data: { reference, expectedAmount: expected } });
-            writePending(null);
-            if (!mounted.current) return true;
-            setPending(null);
-            setPhase("done");
-            if (res.duplicate) toast.info("This payment was already credited");
-            else toast.success("Deposit credited to your wallet");
-            onSuccess?.();
-            setTimeout(() => mounted.current && setPhase("idle"), 2500);
-            return true;
-          } catch (err) {
-            lastError = err instanceof Error ? err.message : lastError;
-            if (isFinal(lastError)) {
-              writePending(null);
-              if (!mounted.current) return false;
-              setPending(null);
-              setPhase("idle");
-              toast.error(lastError);
-              return false;
-            }
-            if (attempt < MAX - 1) await sleep(1500 * (attempt + 1));
-          }
-        }
-        if (!mounted.current) return false;
-        setPhase("idle");
-        toast.error(`${lastError}. You can retry the verification below.`);
-        // Surface whatever already landed in history/wallet meanwhile.
-        onSuccess?.();
-        return false;
-
-      } finally {
-        verifying.current = false;
-      }
-    },
-    [verify, onSuccess],
-  );
-
-  // Resume an interrupted verification after a reload.
-  useEffect(() => {
-    const stored = readPending();
-    if (!stored) return;
-    setPending(stored);
-    void runVerification(stored.reference, stored.amount);
-  }, [runVerification]);
-
   const pay = useCallback(async () => {
     if (!amount || amount <= 0) return toast.error("Enter a valid amount");
     if (!publicKey) return toast.error("Payments are not available right now");
@@ -194,8 +133,7 @@ export function PaystackButton({
 
       const reference = `pstk_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
       const amountAtCheckout = amount;
-      // Paystack's callback runs inside its iframe context — capture the
-      // reference synchronously and do all async work after the popup closes.
+
       const outcome = await new Promise<{ reference: string } | null>((resolve) => {
         let settled = false;
         const handler = window.PaystackPop!.setup({
@@ -220,16 +158,36 @@ export function PaystackButton({
         toast.info("Payment cancelled");
         return;
       }
-      // Persist before verifying so a refresh mid-verification resumes.
-      writePending({ reference: outcome.reference, amount: amountAtCheckout });
-      await runVerification(outcome.reference, amountAtCheckout);
+
+      // Only now — after a completed checkout — does verification begin.
+      recordAttempt({
+        reference: outcome.reference,
+        amount: amountAtCheckout,
+        createdAt: new Date().toISOString(),
+        status: "pending",
+      });
+      onSettled?.();
+      setPhase("verifying");
+      const result = await verifyDeposit(outcome.reference, amountAtCheckout, { retries: 4 });
+      if (!mounted.current) return;
+      if (result.ok) {
+        setPhase("done");
+        if (result.duplicate) toast.info("This payment was already credited");
+        else toast.success("Deposit credited to your wallet");
+        onSuccess?.();
+        setTimeout(() => mounted.current && setPhase("idle"), 2500);
+      } else {
+        setPhase("idle");
+        toast.error(`${result.message}. You can check the payment status below.`);
+        onSettled?.();
+      }
     } catch (err) {
       setPhase("idle");
       toast.error(err instanceof Error ? err.message : "Payment could not start");
     } finally {
       if (mounted.current) setBusy(false);
     }
-  }, [amount, publicKey, runVerification]);
+  }, [amount, publicKey, verifyDeposit, onSuccess, onSettled]);
 
   if (keyError) {
     return (
@@ -243,39 +201,25 @@ export function PaystackButton({
   }
 
   return (
-    <div className="space-y-2">
-      <Button
-        type="button"
-        variant="gold"
-        className="w-full font-bold"
-        onClick={pay}
-        disabled={disabled || busy || !publicKey || phase === "verifying"}
-      >
-        {phase === "done" ? (
-          <CheckCircle2 className="mr-2 h-4 w-4 animate-in zoom-in duration-300" />
-        ) : busy || phase === "verifying" ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <Sparkles className="mr-2 h-4 w-4" />
-        )}
-        {phase === "verifying"
-          ? "Confirming payment…"
-          : phase === "done"
-            ? "Wallet credited"
-            : `Pay ₦${amount ? amount.toLocaleString() : "0"} with Paystack`}
-      </Button>
-
-      {pending && phase !== "verifying" && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={() => runVerification(pending.reference, pending.amount)}
-        >
-          <RefreshCw className="mr-2 h-4 w-4" /> Retry verification
-        </Button>
+    <Button
+      type="button"
+      variant="gold"
+      className="w-full font-bold"
+      onClick={pay}
+      disabled={disabled || busy || !publicKey || phase === "verifying"}
+    >
+      {phase === "done" ? (
+        <CheckCircle2 className="mr-2 h-4 w-4 animate-in zoom-in duration-300" />
+      ) : busy || phase === "verifying" ? (
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      ) : (
+        <Sparkles className="mr-2 h-4 w-4" />
       )}
-    </div>
+      {phase === "verifying"
+        ? "Confirming payment…"
+        : phase === "done"
+          ? "Wallet credited"
+          : `Pay ₦${amount ? amount.toLocaleString() : "0"} with Paystack`}
+    </Button>
   );
 }
