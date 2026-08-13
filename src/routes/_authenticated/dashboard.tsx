@@ -16,6 +16,7 @@ import {
   Bitcoin,
   Gift,
   History,
+  ChevronDown,
 } from "lucide-react";
 import { Logo } from "@/components/site/Logo";
 import { BottomNav } from "@/components/dashboard/BottomNav";
@@ -99,42 +100,43 @@ const unread = (notifications ?? []).filter((n) => !n.read).length;
         </div>
         <nav className="mt-8 flex flex-1 flex-col gap-1">
           <div className="mt-1">
-            <button
-              type="button"
-              onClick={() => setExchangeOpen((open) => !open)}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              aria-expanded={exchangeOpen}
-            >
-              <exchangeGroup.icon className="h-4 w-4" />
+  <button
+    type="button"
+    onClick={() => setExchangeOpen((open) => !open)}
+    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+    aria-expanded={exchangeOpen}
+  >
+    <exchangeGroup.icon className="h-4 w-4" />
 
-              <span className="flex-1">{exchangeGroup.label}</span>
+    <span className="flex-1">
+      {exchangeGroup.label}
+    </span>
 
-              <span
-                className={`text-base transition-transform duration-200 ${
-                  exchangeOpen ? "rotate-90" : ""
-                }`}
-              >
-                ›
-              </span>
-            </button>
+    <ChevronDown
+      className={cn(
+        "h-4 w-4 transition-transform duration-200",
+        exchangeOpen && "rotate-180",
+      )}
+    />
+  </button>
 
-            {exchangeOpen && (
-              <div className="ml-4 flex flex-col gap-1 border-l border-border pl-2">
-                {exchangeGroup.items.map((item) => (
-                  <Link
-                    key={item.label}
-                    to={item.to}
-                    search={item.search as never}
-                    className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                    activeProps={{ className: "bg-gold-soft text-foreground" }}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
+  {exchangeOpen && (
+    <div className="ml-4 flex flex-col gap-1 border-l border-border pl-2">
+      {exchangeGroup.items.map((item) => (
+        <Link
+          key={item.label}
+          to={item.to}
+          search={item.search as never}
+          className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          activeProps={{ className: "bg-gold-soft text-foreground" }}
+        >
+          <item.icon className="h-4 w-4" />
+          {item.label}
+        </Link>
+      ))}
+    </div>
+  )}
+</div>
           {navItems.map((item) => (
             <Link
               key={item.to}
