@@ -1,18 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowDownLeft } from "lucide-react";
+import { ArrowDownLeft, Loader2, RefreshCw, X } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { StageTracker } from "@/components/dashboard/StageTracker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { nairaFormatter } from "@/lib/market-data";
 import { ReceiptActions } from "@/components/dashboard/ReceiptActions";
-import { PaystackButton } from "@/components/dashboard/PaystackButton";
+import { PaystackButton, useVerifyDeposit } from "@/components/dashboard/PaystackButton";
+import {
+  clearAttempt,
+  useDepositAttempts,
+  type DepositAttempt,
+} from "@/lib/deposit-attempts";
 
 export const Route = createFileRoute("/_authenticated/dashboard/deposit")({
   component: DepositPage,
 });
+
 
 type DepositRow = {
   id: string;
@@ -85,10 +93,92 @@ function DepositPage() {
         />
       </div>
 
+      <PendingAttempts />
+
       <RequestHistory rows={history} title="Deposit history" />
     </div>
   );
 }
+
+/**
+ * Unconfirmed checkout attempts. Nothing here verifies automatically — the
+ * user decides when to re-check a payment, and every check is idempotent.
+ */
+function PendingAttempts() {
+  const attempts = useDepositAttempts();
+  const queryClient = useQueryClient();
+  const verifyDeposit = useVerifyDeposit();
+  const [checking, setChecking] = useState<string | null>(null);
+
+  if (attempts.length === 0) return null;
+
+  async function check(a: DepositAttempt) {
+    setChecking(a.reference);
+    try {
+      const res = await verifyDeposit(a.reference, a.amount);
+      if (res.ok) {
+        toast.success(res.duplicate ? "Already credited" : "Deposit credited to your wallet");
+        queryClient.invalidateQueries({ queryKey: ["deposits"] });
+        queryClient.invalidateQueries({ queryKey: ["wallet"] });
+        queryClient.invalidateQueries({ queryKey: ["transactions"] });
+        queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      } else {
+        toast.error(res.message);
+      }
+    } finally {
+      setChecking(null);
+    }
+  }
+
+  return (
+    <div>
+      <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+        Unconfirmed payments
+      </h2>
+      <ul className="space-y-3">
+        {attempts.map((a) => (
+          <li
+            key={a.reference}
+            className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4"
+          >
+            <div className="min-w-0">
+              <p className="font-bold">{nairaFormatter.format(a.amount)}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                Ref {a.reference} · {new Date(a.createdAt).toLocaleString()}
+              </p>
+              {a.reason && <p className="mt-1 text-xs text-destructive">{a.reason}</p>}
+            </div>
+            <div className="flex items-center gap-2">
+              <StatusBadge status={a.status} />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => check(a)}
+                disabled={checking === a.reference}
+              >
+                {checking === a.reference ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Check payment status
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label="Dismiss"
+                onClick={() => clearAttempt(a.reference)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
