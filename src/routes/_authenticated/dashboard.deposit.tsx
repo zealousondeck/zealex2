@@ -1,18 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowDownLeft } from "lucide-react";
+import { ArrowDownLeft, Loader2, RefreshCw, X } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { StageTracker } from "@/components/dashboard/StageTracker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { nairaFormatter } from "@/lib/market-data";
 import { ReceiptActions } from "@/components/dashboard/ReceiptActions";
-import { PaystackButton } from "@/components/dashboard/PaystackButton";
+import { PaystackButton, useVerifyDeposit } from "@/components/dashboard/PaystackButton";
+import {
+  clearAttempt,
+  useDepositAttempts,
+  type DepositAttempt,
+} from "@/lib/deposit-attempts";
 
 export const Route = createFileRoute("/_authenticated/dashboard/deposit")({
   component: DepositPage,
 });
+
 
 type DepositRow = {
   id: string;
