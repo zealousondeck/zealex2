@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Wallet,
@@ -77,11 +77,26 @@ function DashboardInner() {
 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [exchangeOpen, setExchangeOpen] = useState(true);
 
   const { data: notifications } = useNotifications();
-const { data: isAdmin } = useIsAdmin();
-const unread = (notifications ?? []).filter((n) => !n.read).length;
+  const { data: isAdmin } = useIsAdmin();
+  const unread = (notifications ?? []).filter((n) => !n.read).length;
+
+  const [exchangeOpen, setExchangeOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 768px)");
+
+    const update = () => setIsDesktop(media.matches);
+
+    update();
+    media.addEventListener("change", update);
+
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  // rest of DashboardInner...
 
   async function handleSignOut() {
     await queryClient.cancelQueries();
