@@ -16,6 +16,7 @@ declare global {
         amount: number;
         currency?: string;
         ref?: string;
+        metadata?: Record<string, any>;
         callback: (r: { reference: string }) => void;
         onClose: () => void;
       }) => { openIframe: () => void };
@@ -62,7 +63,7 @@ export function useVerifyDeposit() {
         try {
           const res = await verify({ data: { reference, expectedAmount: expected } });
           clearAttempt(reference);
-          return { ok: true as const, duplicate: Boolean(res.duplicate) };
+          return { ok: true as const, duplicate: Boolean(res?.duplicate) };
         } catch (err) {
           lastError = err instanceof Error ? err.message : lastError;
           if (isFinal(lastError)) {
@@ -142,6 +143,7 @@ export function PaystackButton({
           amount: Math.round(amount * 100),
           currency: "NGN",
           ref: reference,
+          metadata: { user_id: userData.user?.id },
           callback: (r) => {
             settled = true;
             resolve({ reference: r.reference || reference });
