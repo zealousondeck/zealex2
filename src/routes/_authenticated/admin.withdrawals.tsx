@@ -137,10 +137,7 @@ function WithdrawDialog({
       await mut.mutateAsync({
         id: withdrawal.id,
         status,
-        stage: status === "paid" ? "paid" : status === "approved" ? "approved" : "under_review",
         note: note.trim() || undefined,
-        userId: withdrawal.user_id,
-        amount: Number(withdrawal.amount),
       });
       toast.success(`Withdrawal ${status}`);
       onClose();
@@ -192,7 +189,7 @@ function WithdrawDialog({
           />
           <div className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={() => decide("rejected")} disabled={mut.isPending}>
-              Reject & refund
+              Reject
             </Button>
             <Button variant="outline" onClick={() => decide("approved")} disabled={mut.isPending}>
               Approve

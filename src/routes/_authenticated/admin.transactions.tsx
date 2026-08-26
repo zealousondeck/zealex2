@@ -78,8 +78,6 @@ function TxPage() {
         id: t.id,
         status: s,
         stage: s === "completed" ? "paid" : "under_review",
-        userId: t.user_id,
-        amount: Number(t.amount),
       });
       toast.success(`Marked ${s}`);
     } catch (e) {

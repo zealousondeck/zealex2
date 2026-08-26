@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { createServerFn, useServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { logAudit } from "./audit";
 
 export type AdminProfile = {
@@ -343,127 +346,117 @@ export function useUpdateDepositStatus() {
   });
 }
 
+const updateWithdrawalStatusSchema = z.object({
+  id: z.string().uuid(),
+  status: z.enum(["approved", "rejected", "paid"]),
+  note: z.string().max(400).optional(),
+});
+
+export const updateWithdrawalStatusServer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => updateWithdrawalStatusSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const roles = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (roles.error) throw new Error("Unable to verify administrator role");
+    const isAdmin = (roles.data ?? []).some((row) =>
+      ["admin", "super_admin", "finance"].includes(String((row as { role?: string }).role ?? "")),
+    );
+    if (!isAdmin) throw new Error("Unauthorized: admin privileges required");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rpcResult, error } = await (supabaseAdmin as any).rpc("process_withdrawal_approval", {
+      _withdrawal_id: data.id,
+      _admin_id: context.userId,
+      _target_status: data.status,
+      _note: data.note ?? null,
+    });
+
+    if (error) throw new Error(error.message || "Withdrawal update failed");
+
+    return rpcResult as { ok: boolean; duplicate: boolean; status: string; amount: number };
+  });
+
 export function useUpdateWithdrawalStatus() {
   const qc = useQueryClient();
+  const updateWithdrawalStatus = useServerFn(updateWithdrawalStatusServer);
+
   return useMutation({
     mutationFn: async ({
       id,
       status,
-      stage,
       note,
-      userId,
-      amount,
     }: {
       id: string;
-      status: "approved" | "rejected" | "paid" | "pending";
-      stage: string;
+      status: "approved" | "rejected" | "paid";
       note?: string;
-      userId: string;
-      amount: number;
     }) => {
-      const patch: any = { status, stage };
-      if (note) patch.note = note;
-      const { error } = await supabase.from("withdrawal_requests").update(patch).eq("id", id);
-      if (error) throw error;
-
-      if (status === "rejected") {
-        // Refund wallet
-        const { data: w } = await supabase
-          .from("wallets")
-          .select("id, balance")
-          .eq("user_id", userId)
-          .eq("currency", "NGN")
-          .maybeSingle();
-        if (w) {
-          await supabase
-            .from("wallets")
-            .update({ balance: Number(w.balance) + Number(amount) })
-            .eq("id", w.id);
-        }
-      }
-      await supabase.from("notifications").insert({
-        user_id: userId,
-        title:
-          status === "paid"
-            ? "Withdrawal paid"
-            : status === "approved"
-              ? "Withdrawal approved"
-              : status === "rejected"
-                ? "Withdrawal rejected"
-                : "Withdrawal updated",
-        body: `Your withdrawal of ₦${amount.toLocaleString()} was ${status}.${note ? " Note: " + note : ""}`,
-        category: "withdrawal",
+      const result = await updateWithdrawalStatus({
+        data: {
+          id,
+          status,
+          note,
+        },
       });
-      await logAudit("withdrawal." + status, "withdrawal_requests", id, { amount, note });
+      return result;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin"] }),
+    onSuccess: (_result, variables) => {
+      qc.invalidateQueries({ queryKey: ["admin"] });
+    },
   });
 }
 
 export function useUpdateTransactionStatus() {
   const qc = useQueryClient();
+  const updateTransactionStatus = useServerFn(updateTransactionStatusServer);
   return useMutation({
     mutationFn: async ({
       id,
       status,
       stage,
-      userId,
-      amount,
       note,
-      credit,
     }: {
       id: string;
       status: "pending" | "processing" | "completed" | "rejected" | "cancelled";
       stage: string;
-      userId: string;
-      amount: number;
       note?: string;
-      /** Credit the user's NGN wallet when the order is completed (crypto/gift card sells). */
-      credit?: boolean;
     }) => {
-      const { error } = await supabase.from("transactions").update({ status, stage }).eq("id", id);
-      if (error) throw error;
-
-      let credited = false;
-      if (credit && status === "completed" && amount > 0) {
-        const { data: wallet } = await supabase
-          .from("wallets")
-          .select("id, balance")
-          .eq("user_id", userId)
-          .eq("currency", "NGN")
-          .maybeSingle();
-        if (wallet) {
-          const { error: wErr } = await supabase
-            .from("wallets")
-            .update({
-              balance: Number(wallet.balance) + amount,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", wallet.id);
-          if (wErr) throw wErr;
-          credited = true;
-          await logAudit("wallet.credit", "wallets", wallet.id, {
-            amount,
-            source: "transaction",
-            id,
-          });
-        }
-      }
-
-      await supabase.from("notifications").insert({
-        user_id: userId,
-        title: `Trade ${status}`,
-        body:
-          `Trade of ₦${amount.toLocaleString()} was ${status}.` +
-          (credited ? " Your wallet has been credited." : "") +
-          (note ? " " + note : ""),
-        category: "trade",
-      });
-      await logAudit("transaction." + status, "transactions", id, { amount, note, credited });
+      return updateTransactionStatus({ data: { id, status, stage, note } });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin"] }),
   });
 }
+
+const updateTransactionStatusSchema = z.object({
+  id: z.string().uuid(),
+  status: z.enum(["processing", "completed", "rejected", "cancelled"]),
+  stage: z.string().min(1).max(40),
+  note: z.string().max(400).optional(),
+});
+
+export const updateTransactionStatusServer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => updateTransactionStatusSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { data: roles, error: roleError } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (roleError) throw new Error("Unable to verify administrator role");
+    if (!(roles ?? []).some((row) => ["admin", "super_admin", "finance"].includes(row.role))) {
+      throw new Error("Unauthorized: admin privileges required");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: result, error } = await (supabaseAdmin as any).rpc("settle_exchange_transaction", {
+      _transaction_id: data.id,
+      _admin_id: context.userId,
+      _target_status: data.status,
+      _stage: data.stage,
+      _note: data.note ?? null,
+    });
+    if (error) throw new Error(error.message || "Exchange update failed");
+    return result as { ok: boolean; duplicate: boolean; status: string; amount: number };
+  });
 
 export function useSetProfileStatus() {
   const qc = useQueryClient();

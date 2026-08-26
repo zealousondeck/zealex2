@@ -34,8 +34,9 @@ const withdrawSchema = z.object({
 });
 
 /**
- * Authenticated: validate the destination account, debit the wallet atomically
- * (never below zero) and record the withdrawal request + notifications.
+ * Authenticated: validate the destination account, ensure the wallet can cover
+ * the request, and create a pending withdrawal request. The wallet is debited
+ * only when an admin approves the request through the server-side approval RPC.
  */
 export const submitWithdrawal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -118,20 +119,6 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
       methodId = created?.id ?? null;
     }
 
-    // Conditional debit: fails if another request drained the balance first.
-    const { data: debited, error: debitErr } = await supabase
-      .from("wallets")
-      .update({
-        balance: Number(wallet.balance) - data.amount,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", wallet.id)
-      .gte("balance", data.amount)
-      .select("id, balance")
-      .maybeSingle();
-    if (debitErr) throw new Error(debitErr.message);
-    if (!debited) throw new Error("Balance changed — please try again");
-
     const noteLine = [
       `${data.bankName} · ${data.accountNumber} · ${resolved.accountName}`,
       data.note,
@@ -151,14 +138,7 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
       })
       .select("id, reference")
       .maybeSingle();
-    if (reqErr) {
-      // Roll the debit back so funds are never lost on a failed insert.
-      await supabase
-        .from("wallets")
-        .update({ balance: Number(wallet.balance), updated_at: new Date().toISOString() })
-        .eq("id", wallet.id);
-      throw new Error(reqErr.message);
-    }
+    if (reqErr) throw new Error(reqErr.message);
 
     const naira = `₦${data.amount.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
     await supabase.from("notifications").insert({
@@ -195,6 +175,6 @@ export const submitWithdrawal = createServerFn({ method: "POST" })
       duplicate: false,
       reference: created?.reference ?? reference,
       accountName: resolved.accountName,
-      newBalance: Number(debited.balance),
+      newBalance: Number(wallet.balance),
     };
   });

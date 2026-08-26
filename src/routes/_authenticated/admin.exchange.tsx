@@ -82,17 +82,8 @@ export function TradeConsole({
         id: selected.id,
         status: s,
         stage,
-        userId: selected.user_id,
-        amount: Number(selected.amount),
         note: notes,
-        credit: selected.type === "sell",
       });
-
-      // persist reviewer note & reviewer_at
-      await supabase
-        .from("transactions")
-        .update({ reviewer_notes: notes, reviewed_at: new Date().toISOString() } as any)
-        .eq("id", selected.id);
       toast.success(`Marked ${s}`);
       setSelected(null);
     } catch (e) {

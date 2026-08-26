@@ -82,8 +82,6 @@ function ExchangePage() {
       const uid = userData.user?.id;
       if (!uid) throw new Error("Not signed in");
 
-      const isCredit = mode === "sell" || isGiftCard;
-
       const { error: txError } = await supabase.from("transactions").insert({
         user_id: uid,
         type: isGiftCard ? "sell" : mode,
@@ -94,26 +92,6 @@ function ExchangePage() {
         status: "pending",
       });
       if (txError) throw txError;
-
-      // Reflect credit trades in the wallet balance immediately (demo settlement).
-      if (isCredit) {
-        const { data: wallet } = await supabase
-          .from("wallets")
-          .select("id, balance")
-          .eq("user_id", uid)
-          .eq("currency", "NGN")
-          .maybeSingle();
-
-        if (wallet) {
-          await supabase
-            .from("wallets")
-            .update({
-              balance: Number(wallet.balance) + Math.round(payout),
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", wallet.id);
-        }
-      }
 
       await supabase.from("notifications").insert({
         user_id: uid,
