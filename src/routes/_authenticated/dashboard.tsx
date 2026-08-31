@@ -17,6 +17,8 @@ import {
   Gift,
   History,
   ChevronDown,
+  Menu,
+  X,
 } from "lucide-react";
 import { Logo } from "@/components/site/Logo";
 import { BottomNav } from "@/components/dashboard/BottomNav";
@@ -33,8 +35,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardLayout,
 });
 
+const walletItem = { to: "/dashboard", label: "Wallet", icon: Wallet, exact: true } as const;
+
 const navItems = [
-  { to: "/dashboard", label: "Wallet", icon: Wallet, exact: true },
   { to: "/dashboard/deposit", label: "Deposit", icon: ArrowDownLeft, exact: false },
   { to: "/dashboard/withdraw", label: "Withdraw", icon: ArrowUpRight, exact: false },
   { to: "/dashboard/kyc", label: "Verification", icon: ShieldCheck, exact: false },
@@ -83,18 +86,39 @@ function DashboardInner() {
   const unread = (notifications ?? []).filter((n) => !n.read).length;
 
   const [exchangeOpen, setExchangeOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     const media = window.matchMedia("(min-width: 768px)");
 
-    const update = () => setIsDesktop(media.matches);
+    const update = () => {
+      setIsDesktop(media.matches);
+      if (media.matches) setMobileNavOpen(false);
+    };
 
     update();
     media.addEventListener("change", update);
 
     return () => media.removeEventListener("change", update);
   }, []);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileNavOpen(false);
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [mobileNavOpen]);
 
   // rest of DashboardInner...
 
@@ -114,44 +138,53 @@ function DashboardInner() {
           <Logo />
         </div>
         <nav className="mt-8 flex flex-1 flex-col gap-1">
+          <Link
+            to={walletItem.to}
+            activeOptions={{ exact: walletItem.exact }}
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            activeProps={{ className: "bg-gold-soft text-foreground" }}
+          >
+            <walletItem.icon className="h-5 w-5" />
+            <span className="flex-1">{walletItem.label}</span>
+          </Link>
+
           <div className="mt-1">
-  <button
-    type="button"
-    onClick={() => setExchangeOpen((open) => !open)}
-    className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-    aria-expanded={exchangeOpen}
-  >
-    <exchangeGroup.icon className="h-4 w-4" />
+            <button
+              type="button"
+              onClick={() => setExchangeOpen((open) => !open)}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              aria-expanded={exchangeOpen}
+            >
+              <exchangeGroup.icon className="h-4 w-4" />
 
-    <span className="flex-1">
-      {exchangeGroup.label}
-    </span>
+              <span className="flex-1">{exchangeGroup.label}</span>
 
-    <ChevronDown
-      className={cn(
-        "h-4 w-4 transition-transform duration-200",
-        exchangeOpen && "rotate-180",
-      )}
-    />
-  </button>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-transform duration-200",
+                  exchangeOpen && "rotate-180",
+                )}
+              />
+            </button>
 
-  {exchangeOpen && (
-    <div className="ml-4 flex flex-col gap-1 border-l border-border pl-2">
-      {exchangeGroup.items.map((item) => (
-        <Link
-          key={item.label}
-          to={item.to}
-          search={item.search as never}
-          className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          activeProps={{ className: "bg-gold-soft text-foreground" }}
-        >
-          <item.icon className="h-4 w-4" />
-          {item.label}
-        </Link>
-      ))}
-    </div>
-  )}
-</div>
+            {exchangeOpen && (
+              <div className="ml-4 flex flex-col gap-1 border-l border-border pl-2">
+                {exchangeGroup.items.map((item) => (
+                  <Link
+                    key={item.label}
+                    to={item.to}
+                    search={item.search as never}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                    activeProps={{ className: "bg-gold-soft text-foreground" }}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
           {navItems.map((item) => (
             <Link
               key={item.to}
@@ -201,6 +234,21 @@ function DashboardInner() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {!isDesktop && (
+              <button
+                type="button"
+                onClick={() => setMobileNavOpen((open) => !open)}
+                className="md:hidden"
+                aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+                aria-expanded={mobileNavOpen}
+                aria-controls="dashboard-mobile-nav"
+              >
+                <span className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card text-foreground transition-colors hover:bg-secondary">
+                  {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </span>
+              </button>
+            )}
+
             <Link
               to="/dashboard/notifications"
               className={cn(
@@ -218,6 +266,99 @@ function DashboardInner() {
             <ThemeToggle />
           </div>
         </header>
+
+        {mobileNavOpen && (
+          <div
+            className="fixed inset-0 top-16 z-40 bg-black/30 backdrop-blur-[1px] md:hidden"
+            onClick={() => setMobileNavOpen(false)}
+            aria-hidden={!mobileNavOpen}
+          >
+            <nav
+              id="dashboard-mobile-nav"
+              aria-label="Mobile navigation"
+              className="max-h-[calc(100dvh-4rem)] w-full overflow-y-auto border-b border-border bg-card/95 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 shadow-card"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex flex-col gap-1 pb-2">
+                <Link
+                  to={walletItem.to}
+                  activeOptions={{ exact: walletItem.exact }}
+                  onClick={() => setMobileNavOpen(false)}
+                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  activeProps={{ className: "bg-gold-soft text-foreground" }}
+                >
+                  <walletItem.icon className="h-5 w-5" />
+                  <span className="flex-1">{walletItem.label}</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setExchangeOpen((open) => !open)}
+                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  aria-expanded={exchangeOpen}
+                  aria-label={exchangeOpen ? "Collapse exchange menu" : "Expand exchange menu"}
+                >
+                  <exchangeGroup.icon className="h-4 w-4" />
+                  <span className="flex-1">{exchangeGroup.label}</span>
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 transition-transform duration-200",
+                      exchangeOpen && "rotate-180",
+                    )}
+                  />
+                </button>
+
+                {exchangeOpen && (
+                  <div className="ml-4 flex flex-col gap-1 border-l border-border pl-2">
+                    {exchangeGroup.items.map((item) => (
+                      <Link
+                        key={item.label}
+                        to={item.to}
+                        search={item.search as never}
+                        onClick={() => setMobileNavOpen(false)}
+                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                        activeProps={{ className: "bg-gold-soft text-foreground" }}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                {navItems.map((item) => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    activeOptions={{ exact: item.exact }}
+                    onClick={() => setMobileNavOpen(false)}
+                    className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                    activeProps={{ className: "bg-gold-soft text-foreground" }}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    <span className="flex-1">{item.label}</span>
+                    {item.label === "Notifications" && unread > 0 && (
+                      <span className="grid h-5 min-w-5 place-items-center rounded-full bg-gold px-1 text-xs font-bold text-gold-foreground">
+                        {unread}
+                      </span>
+                    )}
+                  </Link>
+                ))}
+
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="mt-2 flex items-center gap-3 rounded-xl border border-gold/40 bg-gold-soft px-3 py-3 text-sm font-bold text-foreground transition-colors hover:bg-gold hover:text-gold-foreground"
+                  >
+                    <LayoutDashboard className="h-5 w-5" />
+                    <span className="flex-1">Admin console</span>
+                  </Link>
+                )}
+              </div>
+            </nav>
+          </div>
+        )}
 
         <main className="mx-auto w-full max-w-5xl px-4 pb-28 pt-6 sm:px-6 md:pb-10">
           <Outlet />
