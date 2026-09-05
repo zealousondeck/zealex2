@@ -1,0 +1,177 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { extractSogoReference, extractSogoStatus, sogoRequest } from "./client";
+import type { GiftCardCatalogItem, GiftCardRateItem, ProviderReferenceResult, SogoEnvelope } from "./types";
+
+function normalizeGiftCardCatalog(payload: unknown): GiftCardCatalogItem[] {
+  const list = Array.isArray(payload)
+    ? payload
+    : Array.isArray((payload as any)?.data)
+      ? (payload as any).data
+      : Array.isArray((payload as any)?.result)
+        ? (payload as any).result
+        : [];
+
+  return (list as unknown[]).map((item: unknown, idx: number) => {
+    const row = (item ?? {}) as Record<string, unknown>;
+    return {
+      id: String(row.id ?? row.code ?? row.brand ?? idx),
+      brand: String(row.name ?? "Gift card"),
+      name: String(row.name ?? row.brand ?? row.code ?? "Gift card"),
+      code: String(row.slug ?? ""),
+      slug: String(row.slug ?? ""),
+      countries: Array.isArray(row.countries) ? row.countries.filter((value): value is string => typeof value === "string") : [],
+      card_types: Array.isArray(row.card_types) ? row.card_types.filter((value): value is string => typeof value === "string") : [],
+      category: String(row.category ?? row.type ?? "General"),
+      currency: String(row.currency ?? ""),
+      card_type: Array.isArray(row.card_types) && row.card_types.length === 1 ? String(row.card_types[0]) : "",
+      rate: 0,
+      min_amount: Number(row.min_amount ?? row.minAmount ?? 0),
+      is_active: Boolean(row.is_active ?? row.isActive ?? true),
+    };
+  });
+}
+
+function normalizeGiftCardRate(payload: unknown): GiftCardRateItem[] {
+  const list = Array.isArray(payload)
+    ? payload
+    : Array.isArray((payload as any)?.data)
+      ? (payload as any).data
+      : Array.isArray((payload as any)?.result)
+        ? (payload as any).result
+        : [];
+
+  return (list as unknown[]).map((item: unknown, idx: number) => {
+    const row = (item ?? {}) as Record<string, unknown>;
+    const rates = row.rates;
+    return {
+      id: String(row.id ?? row.code ?? row.brand ?? idx),
+      brand: String(row.name ?? "Gift card"),
+      name: String(row.name ?? "Gift card"),
+      code: String(row.slug ?? ""),
+      slug: String(row.slug ?? ""),
+      rates,
+      category: String(row.category ?? row.type ?? "General"),
+      currency: "",
+      card_type: "",
+      rate: 0,
+      buy_rate: 0,
+      sell_rate: 0,
+      payout: 0,
+      min_amount: 0,
+      is_active: true,
+    };
+  });
+}
+
+export const listGiftCardCatalog = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const payload = await sogoRequest<SogoEnvelope<unknown>>("/gift-cards/sell/catalog");
+    return normalizeGiftCardCatalog(payload).map((card) => ({
+      name: card.name ?? "",
+      slug: card.slug ?? "",
+      countries: card.countries ?? [],
+      cardTypes: card.card_types ?? [],
+      minAmount: Number(card.min_amount ?? 0),
+      maxAmount: Number(card.max_amount ?? 0),
+    }));
+  });
+
+export const listGiftCardRates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const payload = await sogoRequest<SogoEnvelope<unknown>>("/gift-cards/sell/rates");
+    return normalizeGiftCardRate(payload).map((rate) => ({
+      name: rate.name ?? "",
+      slug: rate.slug ?? "",
+      rates: rate.rates ?? null,
+    }));
+  });
+
+const giftCardSellSchema = z.object({
+  slug: z.string().min(1).max(100),
+  cardCountry: z.string().length(2),
+  cardType: z.enum(["ecode", "physical"]),
+  cardCurrency: z.string().length(3),
+  cardAmount: z.number().positive().max(99999),
+  additionalInfo: z.string().min(10).max(1000),
+  subType: z.string().max(100).optional(),
+  specificCountry: z.string().max(100).optional(),
+});
+
+export const submitGiftCardSell = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => giftCardSellSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const idempotencyKey = crypto.randomUUID();
+    const payload = new FormData();
+    payload.set("slug", data.slug);
+    payload.set("card_country", data.cardCountry);
+    payload.set("card_type", data.cardType);
+    payload.set("card_currency", data.cardCurrency);
+    payload.set("card_amount", String(data.cardAmount));
+    payload.set("additional_info", data.additionalInfo);
+    payload.set("payout_currency", "NGN");
+    if (data.subType) payload.set("sub_type", data.subType);
+    if (data.specificCountry) payload.set("specific_country", data.specificCountry);
+
+    const raw = await sogoRequest<SogoEnvelope<unknown>>("/gift-cards/sell", {
+      method: "POST",
+      body: payload,
+      idempotencyKey,
+    });
+
+    const providerReference = extractSogoReference(raw) ?? extractSogoReference((raw as any)?.data ?? (raw as any)?.result);
+    const providerStatus = extractSogoStatus(raw) ?? extractSogoStatus((raw as any)?.data ?? (raw as any)?.result);
+    if (!providerReference) throw new Error("Sogo did not return a transaction reference.");
+
+    const responseData = (raw as any)?.data ?? raw;
+    const transaction = responseData?.transaction;
+    const payout = responseData?.payout_amount ?? transaction?.amount;
+    const amount = Number(typeof payout === "object" ? payout?.raw : payout ?? 0);
+    if (!(amount > 0)) throw new Error("Sogo did not return a valid payout amount.");
+
+    const { data: localTransaction, error: transactionError } = await supabaseAdmin
+      .from("transactions")
+      .insert({
+        user_id: context.userId,
+        type: "sell",
+        category: "giftcard",
+        asset: data.slug,
+        amount,
+        quantity: data.cardAmount,
+        status: "pending",
+        stage: "submitted",
+        reference: providerReference,
+        reviewer_notes: providerStatus ? `Sogo provider status: ${providerStatus}` : "Sogo sell request submitted",
+      } as never)
+      .select("id")
+      .single();
+    if (transactionError || !localTransaction?.id) throw new Error("Unable to record the gift-card trade.");
+
+    const { error: providerError } = await (supabaseAdmin as any)
+      .from("sogo_provider_records")
+      .upsert(
+        {
+          user_id: context.userId,
+          transaction_id: localTransaction.id,
+          operation_type: "gift_card_sell",
+          provider_reference: providerReference,
+          provider_status: providerStatus ?? "pending",
+          idempotency_key: idempotencyKey,
+        } as never,
+        { onConflict: "provider_reference" },
+      );
+    if (providerError) throw new Error("Unable to record the Sogo trade reference.");
+
+    const result: ProviderReferenceResult = {
+      providerReference,
+      providerStatus,
+      providerTransactionId: transaction?.id ? String(transaction.id) : undefined,
+    };
+
+    return result;
+  });

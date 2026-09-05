@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SogoWebhookRouteImport } from './routes/sogo-webhook'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PaystackWebhookRouteImport } from './routes/paystack-webhook'
@@ -47,6 +48,11 @@ import { Route as AuthenticatedAdminDepositsRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin.audit'
 import { Route as AuthenticatedAdminAnnouncementsRouteImport } from './routes/_authenticated/admin.announcements'
 
+const SogoWebhookRoute = SogoWebhookRouteImport.update({
+  id: '/sogo-webhook',
+  path: '/sogo-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -259,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/paystack-webhook': typeof PaystackWebhookRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sogo-webhook': typeof SogoWebhookRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/auth/forgot': typeof AuthForgotRoute
@@ -297,6 +304,7 @@ export interface FileRoutesByTo {
   '/paystack-webhook': typeof PaystackWebhookRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sogo-webhook': typeof SogoWebhookRoute
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
@@ -335,6 +343,7 @@ export interface FileRoutesById {
   '/paystack-webhook': typeof PaystackWebhookRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sogo-webhook': typeof SogoWebhookRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/auth/forgot': typeof AuthForgotRoute
@@ -375,6 +384,7 @@ export interface FileRouteTypes {
     | '/paystack-webhook'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/sogo-webhook'
     | '/admin'
     | '/dashboard'
     | '/auth/forgot'
@@ -413,6 +423,7 @@ export interface FileRouteTypes {
     | '/paystack-webhook'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/sogo-webhook'
     | '/auth/forgot'
     | '/auth/verify'
     | '/admin/announcements'
@@ -450,6 +461,7 @@ export interface FileRouteTypes {
     | '/paystack-webhook'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/sogo-webhook'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/auth/forgot'
@@ -490,10 +502,18 @@ export interface RootRouteChildren {
   PaystackWebhookRoute: typeof PaystackWebhookRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SogoWebhookRoute: typeof SogoWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sogo-webhook': {
+      id: '/sogo-webhook'
+      path: '/sogo-webhook'
+      fullPath: '/sogo-webhook'
+      preLoaderRoute: typeof SogoWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -866,6 +886,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaystackWebhookRoute: PaystackWebhookRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SogoWebhookRoute: SogoWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

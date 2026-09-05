@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -16,10 +18,14 @@ import {
   buildQuote,
   useCryptoMargins,
   useCryptoMarket,
-  useDepositWallets,
   useMyCryptoOrders,
   useSubmitCryptoOrder,
 } from "@/lib/crypto-exchange";
+import {
+  generateCryptoDepositAddress,
+  getCryptoRate,
+  listCryptoAssets,
+} from "@/lib/sogo/crypto";
 import { useCryptoRates } from "@/lib/rates";
 import { nairaFormatter } from "@/lib/market-data";
 import { Button } from "@/components/ui/button";
@@ -58,24 +64,68 @@ export const Route = createFileRoute("/_authenticated/dashboard/crypto")({
 
 const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
+type CryptoAssetOption = {
+  symbol: string;
+  name: string;
+  networks: string[];
+  network?: string;
+  rate?: number;
+};
+
 function CryptoExchangePage() {
   const market = useCryptoMarket();
   const { margins } = useCryptoMargins();
-  const wallets = useDepositWallets();
   const { data: adminRates } = useCryptoRates();
   const orders = useMyCryptoOrders();
   const submit = useSubmitCryptoOrder();
+  const fetchAssets = useServerFn(listCryptoAssets as any);
+  const fetchRate = useServerFn(getCryptoRate as any);
+  const generateAddress = useServerFn(generateCryptoDepositAddress as any);
 
-  const [symbol, setSymbol] = useState(SUPPORTED_COINS[0].symbol);
-  const [network, setNetwork] = useState(SUPPORTED_COINS[0].networks[0]);
+  const assetsQuery = useQuery({
+    queryKey: ["sogo", "crypto", "assets"],
+    queryFn: () => fetchAssets({ data: undefined }),
+  });
+
+  const fallbackAssets = SUPPORTED_COINS.map((coin) => ({
+    symbol: coin.symbol,
+    name: coin.name,
+    networks: coin.networks,
+    network: coin.networks[0],
+    rate: 0,
+  }));
+
+  const assetList: CryptoAssetOption[] =
+    Array.isArray(assetsQuery.data) && assetsQuery.data.length > 0
+      ? (assetsQuery.data as CryptoAssetOption[])
+      : fallbackAssets;
+
+  const [symbol, setSymbol] = useState<string>(assetList[0]?.symbol ?? SUPPORTED_COINS[0].symbol);
+  const [network, setNetwork] = useState<string>(
+    assetList.find((item) => item.symbol === (assetList[0]?.symbol ?? SUPPORTED_COINS[0].symbol))?.networks?.[0] ??
+      SUPPORTED_COINS[0].networks[0],
+  );
   const [amount, setAmount] = useState("");
   const [txHash, setTxHash] = useState("");
   const [proof, setProof] = useState<File | null>(null);
+  const [addressLoading, setAddressLoading] = useState(false);
 
-  const coin = SUPPORTED_COINS.find((c) => c.symbol === symbol) ?? SUPPORTED_COINS[0];
+  const coin = assetList.find((c) => c.symbol === symbol) ?? assetList[0] ?? {
+    symbol: SUPPORTED_COINS[0].symbol,
+    name: SUPPORTED_COINS[0].name,
+    networks: SUPPORTED_COINS[0].networks,
+  };
   const prices = market.data?.prices;
   const priceRow = prices?.find((p) => p.symbol === symbol);
   const fallbackRate = adminRates?.find((r) => r.symbol === symbol)?.buy_rate;
+
+  const rateQuery = useQuery({
+    queryKey: ["sogo", "crypto", "rate", symbol, amount],
+    enabled: Boolean(symbol),
+    queryFn: () => fetchRate({ data: { asset: symbol, amount: Number(amount) || 1 } }),
+  });
+
+  const sogoRate = Number(rateQuery.data?.rate ?? 0);
 
   const quote = useMemo(
     () =>
@@ -89,12 +139,30 @@ function CryptoExchangePage() {
     [symbol, amount, prices, margins, fallbackRate],
   );
 
-  const address = wallets[`${symbol}:${network}`] ?? wallets[network] ?? "";
+  const effectiveQuote = useMemo(
+    () =>
+      sogoRate > 0
+        ? {
+            ...quote,
+            zealexRate: sogoRate,
+            payout: sogoRate * (Number(amount) || 0),
+            live: true,
+          }
+        : quote,
+    [amount, quote, sogoRate],
+  );
+
+  const [sogoAddress, setSogoAddress] = useState("");
+  const address = sogoAddress;
 
   function pickCoin(next: string) {
-    const c = SUPPORTED_COINS.find((x) => x.symbol === next) ?? SUPPORTED_COINS[0];
-    setSymbol(c.symbol);
-    setNetwork(c.networks[0]);
+    const c = assetList.find((x) => x.symbol === next) ?? assetList[0] ?? {
+      symbol: SUPPORTED_COINS[0].symbol,
+      name: SUPPORTED_COINS[0].name,
+      networks: SUPPORTED_COINS[0].networks,
+    };
+    setSymbol(c.symbol ?? SUPPORTED_COINS[0].symbol);
+    setNetwork((c.networks ?? [SUPPORTED_COINS[0].networks[0]])[0] ?? SUPPORTED_COINS[0].networks[0]);
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -104,8 +172,8 @@ function CryptoExchangePage() {
         symbol,
         network,
         amount: Number(amount) || 0,
-        payout: quote.payout,
-        rate: quote.zealexRate,
+        payout: effectiveQuote.payout,
+        rate: effectiveQuote.zealexRate,
         txHash,
         proof,
       });
@@ -115,6 +183,23 @@ function CryptoExchangePage() {
       setProof(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not submit order");
+    }
+  }
+
+  async function handleGenerateAddress() {
+    try {
+      setAddressLoading(true);
+      const result = await generateAddress({ data: { asset: symbol, network } });
+      if (result.address) {
+        setSogoAddress(result.address);
+        toast.success("Sogo deposit address generated");
+      } else {
+        toast.error("Unable to generate a deposit address right now.");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to generate deposit address.");
+    } finally {
+      setAddressLoading(false);
     }
   }
 
@@ -246,12 +331,12 @@ function CryptoExchangePage() {
             />
             <Row
               label={`Zealex buying rate (−${quote.margin}% margin)`}
-              value={quote.zealexRate > 0 ? nairaFormatter.format(quote.zealexRate) : "—"}
+              value={effectiveQuote.zealexRate > 0 ? nairaFormatter.format(effectiveQuote.zealexRate) : "—"}
             />
             <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
               <span className="text-sm font-semibold">Estimated payout</span>
               <span className="font-display text-xl font-extrabold text-gold">
-                {nairaFormatter.format(quote.payout)}
+                {nairaFormatter.format(effectiveQuote.payout)}
               </span>
             </div>
             {!quote.live && (
@@ -259,6 +344,13 @@ function CryptoExchangePage() {
                 Live feed unavailable — showing the desk rate. Final payout is confirmed on review.
               </p>
             )}
+          </div>
+
+          <div className="flex items-center justify-end">
+            <Button type="button" variant="outline" size="sm" onClick={handleGenerateAddress} disabled={addressLoading}>
+              {addressLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Generate deposit address
+            </Button>
           </div>
 
           {address && (

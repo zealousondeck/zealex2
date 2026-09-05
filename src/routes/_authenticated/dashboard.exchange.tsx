@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import {
   ArrowRight,
@@ -12,7 +13,6 @@ import {
   ShieldCheck,
   Sparkles,
   TrendingUp,
-  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { StatusBadge } from "./dashboard.deposit";
 import { cn } from "@/lib/utils";
+import { listGiftCardCatalog, listGiftCardRates, submitGiftCardSell } from "@/lib/sogo/gift-cards";
 
 const searchSchema = z.object({
   tab: z.enum(["sell", "buy"]).catch("sell"),
@@ -42,6 +43,17 @@ export const Route = createFileRoute("/_authenticated/dashboard/exchange")({
 });
 
 type TradeMode = "sell" | "buy";
+
+type GiftCardOption = {
+  brand: string;
+  slug?: string;
+  category: string;
+  currency: string;
+  ratePerUnit: number;
+  change24h: number;
+  countries?: string[];
+  card_types?: string[];
+};
 
 type RecentGiftCardTrade = {
   id: string;
@@ -62,24 +74,56 @@ function ExchangePage() {
   const navigate = Route.useNavigate();
   const queryClient = useQueryClient();
 
+  const fetchCatalog = useServerFn(listGiftCardCatalog as any);
+  const fetchRates = useServerFn(listGiftCardRates as any);
+  const submitSell = useServerFn(submitGiftCardSell as any);
+
+  const catalogQuery = useQuery({
+    queryKey: ["sogo", "giftcards", "catalog"],
+    queryFn: () => fetchCatalog({ data: undefined }),
+  });
+  const ratesQuery = useQuery({
+    queryKey: ["sogo", "giftcards", "rates"],
+    queryFn: () => fetchRates({ data: undefined }),
+  });
+
+  const catalogCards: GiftCardOption[] =
+    Array.isArray(catalogQuery.data) && catalogQuery.data.length > 0
+      ? (catalogQuery.data as GiftCardOption[])
+      : giftCards;
+
   const [mode, setMode] = useState<TradeMode>(tab);
-  const [brand, setBrand] = useState(giftCards[0].brand);
+  const [brand, setBrand] = useState<string>(catalogCards[0]?.brand ?? giftCards[0].brand);
   const [amount, setAmount] = useState("100");
   const [cardType, setCardType] = useState("Physical");
+  const [cardCountry, setCardCountry] = useState("");
+  const [additionalInfo, setAdditionalInfo] = useState("");
   const [submitState, setSubmitState] = useState<"idle" | "loading">("idle");
 
-  const selectedCard = useMemo(
-    () => giftCards.find((card) => card.brand === brand) ?? giftCards[0],
-    [brand],
+  useEffect(() => {
+    if (catalogCards.length > 0 && !catalogCards.some((card) => card.brand === brand)) {
+      setBrand(catalogCards[0].brand ?? giftCards[0].brand);
+    }
+  }, [brand, catalogCards]);
+
+  const selectedCard = useMemo<GiftCardOption>(
+    () => catalogCards.find((card) => card.brand === brand) ?? catalogCards[0] ?? giftCards[0],
+    [brand, catalogCards],
+  );
+
+  const selectedRate = (ratesQuery.data as Array<{ brand?: string; name?: string; rate?: number; buy_rate?: number; sell_rate?: number }> | undefined)?.find(
+    (rate) => rate.brand === selectedCard.brand || rate.name === selectedCard.brand,
   );
 
   const numericAmount = Number(amount) || 0;
-  const rate = selectedCard.ratePerUnit;
+  const rate = Number(
+    selectedRate?.rate ?? selectedRate?.buy_rate ?? selectedRate?.sell_rate ?? selectedCard.ratePerUnit ?? 0,
+  );
   const estimatedValue = numericAmount * rate;
 
   function switchMode(next: TradeMode) {
     setMode(next);
-    setBrand(giftCards[0].brand);
+    setBrand(catalogCards[0]?.brand ?? giftCards[0].brand);
     navigate({ search: { tab: next }, replace: true });
   }
 
@@ -89,37 +133,32 @@ function ExchangePage() {
       toast.error("Enter a valid gift card value");
       return;
     }
+    if (!cardCountry) {
+      toast.error("Select the gift card country");
+      return;
+    }
+    if (additionalInfo.trim().length < 10) {
+      toast.error("Enter at least 10 characters of card information");
+      return;
+    }
 
     setSubmitState("loading");
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      const uid = userData.user?.id;
-      if (!uid) throw new Error("Not signed in");
-
-      const { error: txError } = await supabase.from("transactions").insert({
-        user_id: uid,
-        type: mode,
-        category: "giftcard",
-        asset: brand,
-        amount: Math.round(estimatedValue),
-        quantity: Number(amount),
-        status: "pending",
-        stage: "submitted",
-      });
-
-      if (txError) throw txError;
-
-      await supabase.from("notifications").insert({
-        user_id: uid,
-        title: "Gift card trade submitted",
-        body: `Your ${mode === "sell" ? "sell" : "buy"} request for ${brand} is being processed.`,
-        category: "transaction",
+      const providerResult = await submitSell({
+        data: {
+          slug: selectedCard.slug ?? selectedCard.brand.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          cardCountry,
+          cardType: cardType === "E-code" ? "ecode" : "physical",
+          cardCurrency: selectedCard.currency,
+          cardAmount: numericAmount,
+          additionalInfo: additionalInfo.trim(),
+        },
       });
 
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      toast.success("Gift card trade submitted");
+      toast.success(`Gift card trade submitted: ${providerResult.providerReference}`);
       setAmount("100");
       navigate({ to: "/dashboard/exchange-history", replace: false });
     } catch (err) {
@@ -130,7 +169,7 @@ function ExchangePage() {
   }
 
   const stats = [
-    { label: "Live rate", value: `${nairaFormatter.format(rate)}/unit`, icon: TrendingUp },
+    { label: "Live rate", value: `${nairaFormatter.format(rate || 0)}/unit`, icon: TrendingUp },
     { label: "Secure trading", value: "Verified", icon: ShieldCheck },
     { label: "Fast settlements", value: "5–15 min", icon: Clock3 },
   ];
@@ -280,11 +319,26 @@ function ExchangePage() {
                     </div>
 
                     <div className="space-y-2">
+                      <Label htmlFor="sell-country">Card country</Label>
+                      <Input
+                        id="sell-country"
+                        value={cardCountry}
+                        onChange={(e) => setCardCountry(e.target.value.toUpperCase())}
+                        placeholder="Enter two-letter country code"
+                        maxLength={2}
+                        className="h-12 rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
                       <Label htmlFor="sell-upload">Card details</Label>
-                      <div className="flex h-12 items-center justify-between rounded-xl border border-dashed border-border bg-secondary/40 px-3 text-sm text-muted-foreground">
-                        <span className="truncate">Upload reference photo</span>
-                        <Upload className="h-4 w-4 text-muted-foreground" />
-                      </div>
+                      <Input
+                        id="sell-upload"
+                        value={additionalInfo}
+                        onChange={(e) => setAdditionalInfo(e.target.value)}
+                        placeholder={cardType === "E-code" ? "Enter redemption code" : "Describe the card"}
+                        className="h-12 rounded-xl"
+                      />
                     </div>
                   </div>
                 </TabsContent>
@@ -408,7 +462,7 @@ function ExchangePage() {
             </CardContent>
           </Card>
 
-          <PopularGiftCards />
+          <PopularGiftCards catalogCards={catalogCards} />
         </div>
 
         <aside className="space-y-6">
@@ -489,14 +543,14 @@ function ExchangePage() {
         </aside>
       </div>
 
-      <PopularGiftCards />
+      <PopularGiftCards catalogCards={catalogCards} />
 
       <RecentGiftCardActivity />
     </div>
   );
 }
 
-function PopularGiftCards() {
+function PopularGiftCards({ catalogCards }: { catalogCards: GiftCardOption[] }) {
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between gap-3">
@@ -512,7 +566,7 @@ function PopularGiftCards() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {giftCards.slice(0, 4).map((card) => (
+        {(catalogCards.slice(0, 4) as GiftCardOption[]).map((card) => (
           <Card key={card.brand} className="border-border bg-card shadow-soft transition-colors hover:border-gold/40">
             <CardContent className="space-y-3 p-4">
               <div className="flex items-center justify-between gap-3">
