@@ -94,7 +94,7 @@ function DepositPage() {
         />
       </div>
 
-      <PendingAttempts userId={userId} />
+      <PendingAttempts userId={userId} databaseRows={history} />
 
       <RequestHistory rows={history} title="Deposit history" />
     </div>
@@ -105,8 +105,29 @@ function DepositPage() {
  * Unconfirmed checkout attempts. Nothing here verifies automatically — the
  * user decides when to re-check a payment, and every check is idempotent.
  */
-function PendingAttempts({ userId }: { userId: string | null }) {
-  const attempts = useDepositAttempts(userId);
+function PendingAttempts({
+  userId,
+  databaseRows,
+}: {
+  userId: string | null;
+  databaseRows: DepositRow[];
+}) {
+  const localAttempts = useDepositAttempts(userId);
+  const databaseAttempts: DepositAttempt[] = databaseRows
+    .filter((row) => row.status === "pending" && row.stage !== "paid")
+    .slice(0, 20)
+    .map((row) => ({
+      reference: row.reference,
+      amount: Number(row.amount),
+      createdAt: row.created_at,
+      status: "pending",
+    }));
+  const attempts = [
+    ...databaseAttempts,
+    ...localAttempts.filter(
+      (local) => !databaseAttempts.some((row) => row.reference === local.reference),
+    ),
+  ];
   const queryClient = useQueryClient();
   const verifyDeposit = useVerifyDeposit();
   const [checking, setChecking] = useState<string | null>(null);

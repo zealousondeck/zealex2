@@ -14,10 +14,37 @@ const verifySchema = z.object({
   expectedAmount: z.number().positive(),
 });
 
+const pendingDepositSchema = z.object({
+  reference: z.string().min(6).max(100),
+  amount: z.number().positive(),
+});
+
 type PaystackCreditResult = {
   duplicate: boolean;
   id: string | null;
 };
+
+export const createPaystackDepositAttempt = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => pendingDepositSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { data: deposit, error } = await context.supabase
+      .from("deposit_requests")
+      .insert({
+        user_id: context.userId,
+        amount: data.amount,
+        currency: "NGN",
+        reference: data.reference,
+        status: "pending",
+        stage: "submitted",
+        note: "Paystack checkout initiated",
+      })
+      .select("id, reference, amount, status, stage, created_at")
+      .single();
+
+    if (error) throw new Error(`Could not create deposit attempt: ${error.message}`);
+    return deposit;
+  });
 
 /** Error thrown by verification with a machine-readable code the UI can act on. */
 class VerifyError extends Error {
@@ -47,7 +74,7 @@ export const verifyPaystackPayment = createServerFn({ method: "POST" })
       .eq("user_id", context.userId)
       .eq("reference", data.reference)
       .maybeSingle();
-    if (existing) {
+    if (existing && ["approved", "paid", "completed"].includes(existing.status)) {
       return { ok: true, duplicate: true, amount: Number(existing.amount) };
     }
 

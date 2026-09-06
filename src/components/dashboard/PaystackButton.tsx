@@ -4,7 +4,11 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { getPaystackPublicKey, verifyPaystackPayment } from "@/lib/paystack.functions";
+import {
+  createPaystackDepositAttempt,
+  getPaystackPublicKey,
+  verifyPaystackPayment,
+} from "@/lib/paystack.functions";
 import { clearAttempt, recordAttempt, updateAttempt } from "@/lib/deposit-attempts";
 
 declare global {
@@ -97,6 +101,7 @@ export function PaystackButton({
   const [keyError, setKeyError] = useState(false);
   const mounted = useRef(true);
   const fetchKey = useServerFn(getPaystackPublicKey);
+  const createDepositAttempt = useServerFn(createPaystackDepositAttempt);
   const verifyDeposit = useVerifyDeposit();
 
   useEffect(() => {
@@ -134,6 +139,8 @@ export function PaystackButton({
 
       const reference = `pstk_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
       const amountAtCheckout = amount;
+      if (!userData.user?.id) throw new Error("Please sign in again to continue");
+      await createDepositAttempt({ data: { reference, amount: amountAtCheckout } });
 
       const outcome = await new Promise<{ reference: string } | null>((resolve) => {
         let settled = false;
@@ -162,7 +169,6 @@ export function PaystackButton({
       }
 
       // Only now — after a completed checkout — does verification begin.
-      if (!userData.user?.id) throw new Error("Please sign in again to continue");
       recordAttempt(userData.user.id, {
         reference: outcome.reference,
         amount: amountAtCheckout,
@@ -192,7 +198,7 @@ export function PaystackButton({
     } finally {
       if (mounted.current) setBusy(false);
     }
-  }, [amount, publicKey, verifyDeposit, onSuccess, onSettled]);
+  }, [amount, createDepositAttempt, publicKey, verifyDeposit, onSuccess, onSettled]);
 
   if (keyError) {
     return (
