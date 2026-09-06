@@ -16,7 +16,7 @@ declare global {
         amount: number;
         currency?: string;
         ref?: string;
-        metadata?: Record<string, any>;
+        metadata?: Record<string, unknown>;
         callback: (r: { reference: string }) => void;
         onClose: () => void;
       }) => { openIframe: () => void };
@@ -54,7 +54,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export function useVerifyDeposit() {
   const verify = useServerFn(verifyPaystackPayment);
   return useCallback(
-    async (reference: string, expected: number, opts?: { retries?: number }) => {
+    async (userId: string, reference: string, expected: number, opts?: { retries?: number }) => {
       const MAX = opts?.retries ?? 1;
       let lastError = "Verification failed";
       const isFinal = (m: string) =>
@@ -62,18 +62,18 @@ export function useVerifyDeposit() {
       for (let attempt = 0; attempt < MAX; attempt++) {
         try {
           const res = await verify({ data: { reference, expectedAmount: expected } });
-          clearAttempt(reference);
+          clearAttempt(userId, reference);
           return { ok: true as const, duplicate: Boolean(res?.duplicate) };
         } catch (err) {
           lastError = err instanceof Error ? err.message : lastError;
           if (isFinal(lastError)) {
-            updateAttempt(reference, { status: "failed", reason: lastError });
+            updateAttempt(userId, reference, { status: "failed", reason: lastError });
             return { ok: false as const, message: lastError, final: true };
           }
           if (attempt < MAX - 1) await sleep(1500 * (attempt + 1));
         }
       }
-      updateAttempt(reference, { status: "pending", reason: lastError });
+      updateAttempt(userId, reference, { status: "pending", reason: lastError });
       return { ok: false as const, message: lastError, final: false };
     },
     [verify],
@@ -162,7 +162,8 @@ export function PaystackButton({
       }
 
       // Only now — after a completed checkout — does verification begin.
-      recordAttempt({
+      if (!userData.user?.id) throw new Error("Please sign in again to continue");
+      recordAttempt(userData.user.id, {
         reference: outcome.reference,
         amount: amountAtCheckout,
         createdAt: new Date().toISOString(),
@@ -170,7 +171,9 @@ export function PaystackButton({
       });
       onSettled?.();
       setPhase("verifying");
-      const result = await verifyDeposit(outcome.reference, amountAtCheckout, { retries: 4 });
+      const result = await verifyDeposit(userData.user.id, outcome.reference, amountAtCheckout, {
+        retries: 4,
+      });
       if (!mounted.current) return;
       if (result.ok) {
         setPhase("done");

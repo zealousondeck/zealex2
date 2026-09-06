@@ -14,13 +14,17 @@ export type DepositAttempt = {
   reason?: string;
 };
 
-const KEY = "zealex.deposit.attempts";
+const KEY_PREFIX = "zealex.deposit.attempts";
 const EVENT = "zealex:deposit-attempts";
 
-function read(): DepositAttempt[] {
-  if (typeof window === "undefined") return [];
+function keyForUser(userId: string) {
+  return `${KEY_PREFIX}.${userId}`;
+}
+
+function read(userId: string | null | undefined): DepositAttempt[] {
+  if (typeof window === "undefined" || !userId) return [];
   try {
-    const raw = window.localStorage.getItem(KEY);
+    const raw = window.localStorage.getItem(keyForUser(userId));
     if (!raw) return [];
     const parsed = JSON.parse(raw) as DepositAttempt[];
     return Array.isArray(parsed) ? parsed.filter((a) => a?.reference) : [];
@@ -29,34 +33,51 @@ function read(): DepositAttempt[] {
   }
 }
 
-function write(list: DepositAttempt[]) {
-  if (typeof window === "undefined") return;
+function write(userId: string, list: DepositAttempt[]) {
+  if (typeof window === "undefined" || !userId) return;
   try {
-    window.localStorage.setItem(KEY, JSON.stringify(list.slice(0, 20)));
+    window.localStorage.setItem(keyForUser(userId), JSON.stringify(list.slice(0, 20)));
   } catch {
     /* storage unavailable — attempts simply aren't remembered */
   }
   window.dispatchEvent(new Event(EVENT));
 }
 
-export function recordAttempt(attempt: DepositAttempt) {
-  const list = read().filter((a) => a.reference !== attempt.reference);
-  write([attempt, ...list]);
+export function recordAttempt(userId: string, attempt: DepositAttempt) {
+  const list = read(userId).filter((a) => a.reference !== attempt.reference);
+  write(userId, [attempt, ...list]);
 }
 
-export function updateAttempt(reference: string, patch: Partial<DepositAttempt>) {
-  write(read().map((a) => (a.reference === reference ? { ...a, ...patch } : a)));
+export function updateAttempt(userId: string, reference: string, patch: Partial<DepositAttempt>) {
+  write(
+    userId,
+    read(userId).map((a) => (a.reference === reference ? { ...a, ...patch } : a)),
+  );
 }
 
-export function clearAttempt(reference: string) {
-  write(read().filter((a) => a.reference !== reference));
+export function clearAttempt(userId: string, reference: string) {
+  write(
+    userId,
+    read(userId).filter((a) => a.reference !== reference),
+  );
+}
+
+export function clearDepositAttempts(userId: string) {
+  if (typeof window === "undefined" || !userId) return;
+  try {
+    window.localStorage.removeItem(keyForUser(userId));
+    window.localStorage.removeItem("zealex.deposit.attempts");
+  } catch {
+    /* storage unavailable — attempts simply aren't cleared */
+  }
+  window.dispatchEvent(new Event(EVENT));
 }
 
 /** Reactive view of the stored attempts. */
-export function useDepositAttempts() {
+export function useDepositAttempts(userId: string | null | undefined) {
   const [attempts, setAttempts] = useState<DepositAttempt[]>([]);
 
-  const sync = useCallback(() => setAttempts(read()), []);
+  const sync = useCallback(() => setAttempts(read(userId)), [userId]);
 
   useEffect(() => {
     sync();

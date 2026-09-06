@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { extractSogoReference, extractSogoStatus, sogoRequest } from "./client";
+import { extractSogoProviderTransactionId, extractSogoReference, extractSogoStatus, sogoRequest } from "./client";
 import type { CryptoAssetItem, ProviderReferenceResult, SogoEnvelope } from "./types";
 
 function normalizeAsset(payload: unknown): CryptoAssetItem[] {
@@ -87,6 +87,7 @@ export const generateCryptoDepositAddress = createServerFn({ method: "POST" })
 
     const payload = (raw as any)?.data ?? (raw as any)?.result ?? raw;
     const providerReference = extractSogoReference(raw) ?? extractSogoReference(payload);
+    const providerTransactionId = extractSogoProviderTransactionId(raw) ?? extractSogoProviderTransactionId(payload);
     const providerStatus = extractSogoStatus(raw) ?? extractSogoStatus(payload);
     const address = String(
       (payload as any)?.address ??
@@ -102,6 +103,7 @@ export const generateCryptoDepositAddress = createServerFn({ method: "POST" })
         user_id: context.userId,
         operation_type: "crypto_deposit_address",
         provider_reference: providerReference,
+        provider_transaction_id: providerTransactionId ?? null,
         provider_status: providerStatus ?? "active",
         idempotency_key: idempotencyKey,
       } as never,

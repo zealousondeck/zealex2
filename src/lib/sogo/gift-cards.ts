@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { extractSogoReference, extractSogoStatus, sogoRequest } from "./client";
+import { extractSogoProviderTransactionId, extractSogoReference, extractSogoStatus, sogoRequest } from "./client";
 import type { GiftCardCatalogItem, GiftCardRateItem, ProviderReferenceResult, SogoEnvelope } from "./types";
 
 function normalizeGiftCardCatalog(payload: unknown): GiftCardCatalogItem[] {
@@ -125,6 +125,8 @@ export const submitGiftCardSell = createServerFn({ method: "POST" })
     });
 
     const providerReference = extractSogoReference(raw) ?? extractSogoReference((raw as any)?.data ?? (raw as any)?.result);
+    const providerTransactionId =
+      extractSogoProviderTransactionId(raw) ?? extractSogoProviderTransactionId((raw as any)?.data ?? (raw as any)?.result);
     const providerStatus = extractSogoStatus(raw) ?? extractSogoStatus((raw as any)?.data ?? (raw as any)?.result);
     if (!providerReference) throw new Error("Sogo did not return a transaction reference.");
 
@@ -160,6 +162,7 @@ export const submitGiftCardSell = createServerFn({ method: "POST" })
           transaction_id: localTransaction.id,
           operation_type: "gift_card_sell",
           provider_reference: providerReference,
+          provider_transaction_id: providerTransactionId ?? null,
           provider_status: providerStatus ?? "pending",
           idempotency_key: idempotencyKey,
         } as never,

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowDownLeft, Loader2, RefreshCw, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,9 +31,15 @@ type DepositRow = {
 function DepositPage() {
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+  }, []);
 
   const { data: history = [] } = useQuery({
-    queryKey: ["deposits", "me"],
+    queryKey: ["deposits", userId],
+    enabled: Boolean(userId),
     queryFn: async () => {
       const { data } = await supabase
         .from("deposit_requests")
@@ -88,7 +94,7 @@ function DepositPage() {
         />
       </div>
 
-      <PendingAttempts />
+      <PendingAttempts userId={userId} />
 
       <RequestHistory rows={history} title="Deposit history" />
     </div>
@@ -99,8 +105,8 @@ function DepositPage() {
  * Unconfirmed checkout attempts. Nothing here verifies automatically — the
  * user decides when to re-check a payment, and every check is idempotent.
  */
-function PendingAttempts() {
-  const attempts = useDepositAttempts();
+function PendingAttempts({ userId }: { userId: string | null }) {
+  const attempts = useDepositAttempts(userId);
   const queryClient = useQueryClient();
   const verifyDeposit = useVerifyDeposit();
   const [checking, setChecking] = useState<string | null>(null);
@@ -110,7 +116,8 @@ function PendingAttempts() {
   async function check(a: DepositAttempt) {
     setChecking(a.reference);
     try {
-      const res = await verifyDeposit(a.reference, a.amount);
+      if (!userId) return;
+      const res = await verifyDeposit(userId, a.reference, a.amount);
       if (res.ok) {
         toast.success(res.duplicate ? "Already credited" : "Deposit credited to your wallet");
         queryClient.invalidateQueries({ queryKey: ["deposits"] });
@@ -162,7 +169,7 @@ function PendingAttempts() {
                 size="icon"
                 variant="ghost"
                 aria-label="Dismiss"
-                onClick={() => clearAttempt(a.reference)}
+                onClick={() => userId && clearAttempt(userId, a.reference)}
               >
                 <X className="h-4 w-4" />
               </Button>

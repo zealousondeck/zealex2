@@ -166,6 +166,32 @@ export function extractSogoReference(payload: unknown): string | undefined {
   return undefined;
 }
 
+export function extractSogoProviderTransactionId(payload: unknown): string | undefined {
+  if (!payload || typeof payload !== "object") return undefined;
+  const record = payload as Record<string, unknown>;
+  const candidates = [
+    "provider_transaction_id",
+    "providerTransactionId",
+    "transaction_id",
+    "transactionId",
+    "tx_hash",
+    "txHash",
+    "id",
+    "provider_tx_id",
+    "providerTxId",
+  ];
+
+  for (const key of candidates) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number") return String(value);
+  }
+
+  if (record.data && typeof record.data === "object") return extractSogoProviderTransactionId(record.data);
+  if (record.result && typeof record.result === "object") return extractSogoProviderTransactionId(record.result);
+  return undefined;
+}
+
 export function extractSogoStatus(payload: unknown): string | undefined {
   if (!payload || typeof payload !== "object") return undefined;
   const record = payload as Record<string, unknown>;

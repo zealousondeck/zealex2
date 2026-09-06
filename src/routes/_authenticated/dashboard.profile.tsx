@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
+import { clearDepositAttempts } from "@/lib/deposit-attempts";
 
 export const Route = createFileRoute("/_authenticated/dashboard/profile")({
   component: ProfilePage,
@@ -55,6 +56,8 @@ function ProfilePage() {
   async function handleSignOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
+    const { data } = await supabase.auth.getUser();
+    if (data.user?.id) clearDepositAttempts(data.user.id);
     await supabase.auth.signOut();
     toast.success("Signed out");
     navigate({ to: "/auth", replace: true });

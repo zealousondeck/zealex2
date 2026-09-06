@@ -28,6 +28,7 @@ import { useNotifications, useRealtimeSync } from "@/lib/dashboard-data";
 import { useIsAdmin } from "@/lib/roles";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { clearDepositAttempts } from "@/lib/deposit-attempts";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -125,6 +126,8 @@ function DashboardInner() {
   async function handleSignOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
+    const { data } = await supabase.auth.getUser();
+    if (data.user?.id) clearDepositAttempts(data.user.id);
     await supabase.auth.signOut();
     toast.success("Signed out");
     navigate({ to: "/auth", replace: true });

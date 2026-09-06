@@ -27,6 +27,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useMyPermissions, type Permission } from "@/lib/permissions";
+import { clearDepositAttempts } from "@/lib/deposit-attempts";
+import type { LucideIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
@@ -59,7 +61,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminLayout,
 });
 
-type NavItem = { to: string; label: string; icon: any; exact?: boolean; perm: Permission };
+type NavItem = { to: string; label: string; icon: LucideIcon; exact?: boolean; perm: Permission };
 
 const NAV: NavItem[] = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true, perm: "view_admin" },
@@ -112,6 +114,8 @@ function Inner() {
   async function signOut() {
     await qc.cancelQueries();
     qc.clear();
+    const { data } = await supabase.auth.getUser();
+    if (data.user?.id) clearDepositAttempts(data.user.id);
     await supabase.auth.signOut();
     toast.success("Signed out");
     navigate({ to: "/auth", replace: true });

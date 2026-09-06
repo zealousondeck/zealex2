@@ -41,7 +41,10 @@ export const Route = createFileRoute("/paystack-webhook")({
             return new Response("Invalid signature", { status: 400 });
           }
 
-          let payload: any;
+          let payload: {
+            event?: unknown;
+            data?: Record<string, unknown> & { metadata?: { user_id?: unknown } };
+          };
           try {
             payload = JSON.parse(rawBody);
           } catch (error) {
@@ -49,9 +52,7 @@ export const Route = createFileRoute("/paystack-webhook")({
             return new Response("Malformed JSON", { status: 400 });
           }
 
-          const eventName = String(payload?.event ?? "");
           const data = payload?.data;
-          const txStatus = String(data?.status ?? "").toLowerCase();
 
           if (!data || typeof data !== "object") {
             console.error("[Paystack webhook] missing payload.data");
@@ -64,21 +65,53 @@ export const Route = createFileRoute("/paystack-webhook")({
             return new Response("Missing reference", { status: 400 });
           }
 
-          // Paystack can send other events. Acknowledge them without crediting.
-          if (eventName !== "charge.success" && eventName !== "payment.success" && txStatus !== "success") {
-            return new Response(JSON.stringify({ ok: true, handled: false, event: eventName || txStatus }), {
-              status: 200,
+          let verificationResponse: Response;
+          try {
+            verificationResponse = await fetch(
+              `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+              { headers: { Authorization: `Bearer ${secret}` } },
+            );
+          } catch (error) {
+            console.error("[Paystack webhook] provider verification request failed", {
+              reference,
+              error,
             });
+            return new Response("Paystack verification temporarily unavailable", { status: 503 });
           }
 
+          const verificationPayload = (await verificationResponse.json().catch(() => null)) as {
+            status?: boolean;
+            message?: string;
+            data?: { status?: string; amount?: number; currency?: string };
+          } | null;
+
+          if (
+            !verificationResponse.ok ||
+            !verificationPayload?.status ||
+            !verificationPayload.data
+          ) {
+            console.error("[Paystack webhook] provider verification failed", {
+              reference,
+              status: verificationResponse.status,
+              message: verificationPayload?.message,
+            });
+            return new Response("Paystack verification temporarily unavailable", { status: 503 });
+          }
+
+          const verifiedTransaction = verificationPayload.data;
+          const txStatus = String(verifiedTransaction.status ?? "").toLowerCase();
           if (txStatus !== "success") {
-            console.error(`[Paystack webhook] non-success status for ${reference}: ${txStatus}`);
+            console.error(
+              `[Paystack webhook] verified payment is not successful for ${reference}: ${txStatus}`,
+            );
             return new Response(JSON.stringify({ ok: true, handled: false, status: txStatus }), {
               status: 200,
             });
           }
 
-          const currency = String(data.currency ?? "").trim().toUpperCase();
+          const currency = String(verifiedTransaction.currency ?? "")
+            .trim()
+            .toUpperCase();
           if (!currency) {
             console.error(`[Paystack webhook] missing currency for ${reference}`);
             return new Response("Missing currency", { status: 400 });
@@ -88,15 +121,19 @@ export const Route = createFileRoute("/paystack-webhook")({
             return new Response("Unsupported currency", { status: 400 });
           }
 
-          const amountKobo = Number(data.amount ?? 0);
+          const amountKobo = Number(verifiedTransaction.amount ?? 0);
           if (!Number.isFinite(amountKobo) || amountKobo <= 0) {
-            console.error(`[Paystack webhook] invalid amount for ${reference}: ${data.amount}`);
+            console.error(
+              `[Paystack webhook] invalid verified amount for ${reference}: ${verifiedTransaction.amount}`,
+            );
             return new Response("Invalid amount", { status: 400 });
           }
 
           const nairaAmount = amountKobo / 100;
           if (!(nairaAmount > 0)) {
-            console.error(`[Paystack webhook] zero or negative amount for ${reference}: ${amountKobo}`);
+            console.error(
+              `[Paystack webhook] zero or negative amount for ${reference}: ${amountKobo}`,
+            );
             return new Response("Invalid amount", { status: 400 });
           }
 
@@ -124,13 +161,18 @@ export const Route = createFileRoute("/paystack-webhook")({
                 userId = String(existingDeposit.user_id).trim();
               }
             } catch (lookupError) {
-              console.error("[Paystack webhook] failed to resolve deposit user mapping", lookupError);
+              console.error(
+                "[Paystack webhook] failed to resolve deposit user mapping",
+                lookupError,
+              );
               return new Response("Server error", { status: 500 });
             }
           }
 
           if (!userId || !uuidRegex.test(userId)) {
-            console.error(`[Paystack webhook] missing or invalid user_id for reference ${reference}: ${userId ?? "none"}`);
+            console.error(
+              `[Paystack webhook] missing or invalid user_id for reference ${reference}: ${userId ?? "none"}`,
+            );
             return new Response("Invalid user mapping", { status: 400 });
           }
 
@@ -145,7 +187,9 @@ export const Route = createFileRoute("/paystack-webhook")({
               throw profileError;
             }
             if (!profile?.id) {
-              console.error(`[Paystack webhook] user does not exist for id ${userId}, reference ${reference}`);
+              console.error(
+                `[Paystack webhook] user does not exist for id ${userId}, reference ${reference}`,
+              );
               return new Response("User not found", { status: 400 });
             }
           } catch (profileError) {
@@ -154,11 +198,14 @@ export const Route = createFileRoute("/paystack-webhook")({
           }
 
           try {
-            const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc("paystack_credit_deposit", {
-              _user_id: userId,
-              _amount: nairaAmount,
-              _reference: reference,
-            });
+            const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc(
+              "paystack_credit_deposit",
+              {
+                _user_id: userId,
+                _amount: nairaAmount,
+                _reference: reference,
+              },
+            );
 
             if (rpcError) {
               console.error("[Paystack webhook] paystack_credit_deposit RPC failed", {
@@ -176,9 +223,12 @@ export const Route = createFileRoute("/paystack-webhook")({
                 ? Boolean((rpcResult as { duplicate?: boolean }).duplicate)
                 : false;
 
-            return new Response(JSON.stringify({ ok: true, duplicate, result: rpcResult ?? null }), {
-              status: 200,
-            });
+            return new Response(
+              JSON.stringify({ ok: true, duplicate, result: rpcResult ?? null }),
+              {
+                status: 200,
+              },
+            );
           } catch (error) {
             console.error("[Paystack webhook] unexpected server error during wallet credit", error);
             return new Response("Server error", { status: 500 });

@@ -14,6 +14,11 @@ const verifySchema = z.object({
   expectedAmount: z.number().positive(),
 });
 
+type PaystackCreditResult = {
+  duplicate: boolean;
+  id: string | null;
+};
+
 /** Error thrown by verification with a machine-readable code the UI can act on. */
 class VerifyError extends Error {
   constructor(
@@ -106,4 +111,11 @@ export const verifyPaystackPayment = createServerFn({ method: "POST" })
 
       throw new VerifyError("Could not credit your wallet — please retry", true);
     }
+
+    const rpcResult = rpc as { duplicate?: unknown; id?: unknown };
+    const result: PaystackCreditResult = {
+      duplicate: Boolean(rpcResult.duplicate),
+      id: typeof rpcResult.id === "string" ? rpcResult.id : null,
+    };
+    return result;
   });
