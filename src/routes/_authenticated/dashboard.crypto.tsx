@@ -21,11 +21,7 @@ import {
   useMyCryptoOrders,
   useSubmitCryptoOrder,
 } from "@/lib/crypto-exchange";
-import {
-  generateCryptoDepositAddress,
-  getCryptoRate,
-  listCryptoAssets,
-} from "@/lib/sogo/crypto";
+import { generateCryptoDepositAddress, getCryptoRate, listCryptoAssets } from "@/lib/sogo/crypto";
 import { useCryptoRates } from "@/lib/rates";
 import { nairaFormatter } from "@/lib/market-data";
 import { Button } from "@/components/ui/button";
@@ -102,19 +98,20 @@ function CryptoExchangePage() {
 
   const [symbol, setSymbol] = useState<string>(assetList[0]?.symbol ?? SUPPORTED_COINS[0].symbol);
   const [network, setNetwork] = useState<string>(
-    assetList.find((item) => item.symbol === (assetList[0]?.symbol ?? SUPPORTED_COINS[0].symbol))?.networks?.[0] ??
-      SUPPORTED_COINS[0].networks[0],
+    assetList.find((item) => item.symbol === (assetList[0]?.symbol ?? SUPPORTED_COINS[0].symbol))
+      ?.networks?.[0] ?? SUPPORTED_COINS[0].networks[0],
   );
   const [amount, setAmount] = useState("");
   const [txHash, setTxHash] = useState("");
   const [proof, setProof] = useState<File | null>(null);
   const [addressLoading, setAddressLoading] = useState(false);
 
-  const coin = assetList.find((c) => c.symbol === symbol) ?? assetList[0] ?? {
-    symbol: SUPPORTED_COINS[0].symbol,
-    name: SUPPORTED_COINS[0].name,
-    networks: SUPPORTED_COINS[0].networks,
-  };
+  const coin = assetList.find((c) => c.symbol === symbol) ??
+    assetList[0] ?? {
+      symbol: SUPPORTED_COINS[0].symbol,
+      name: SUPPORTED_COINS[0].name,
+      networks: SUPPORTED_COINS[0].networks,
+    };
   const prices = market.data?.prices;
   const priceRow = prices?.find((p) => p.symbol === symbol);
   const fallbackRate = adminRates?.find((r) => r.symbol === symbol)?.buy_rate;
@@ -156,13 +153,16 @@ function CryptoExchangePage() {
   const address = sogoAddress;
 
   function pickCoin(next: string) {
-    const c = assetList.find((x) => x.symbol === next) ?? assetList[0] ?? {
-      symbol: SUPPORTED_COINS[0].symbol,
-      name: SUPPORTED_COINS[0].name,
-      networks: SUPPORTED_COINS[0].networks,
-    };
+    const c = assetList.find((x) => x.symbol === next) ??
+      assetList[0] ?? {
+        symbol: SUPPORTED_COINS[0].symbol,
+        name: SUPPORTED_COINS[0].name,
+        networks: SUPPORTED_COINS[0].networks,
+      };
     setSymbol(c.symbol ?? SUPPORTED_COINS[0].symbol);
-    setNetwork((c.networks ?? [SUPPORTED_COINS[0].networks[0]])[0] ?? SUPPORTED_COINS[0].networks[0]);
+    setNetwork(
+      (c.networks ?? [SUPPORTED_COINS[0].networks[0]])[0] ?? SUPPORTED_COINS[0].networks[0],
+    );
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -182,6 +182,7 @@ function CryptoExchangePage() {
       setTxHash("");
       setProof(null);
     } catch (err) {
+      console.error("[Crypto] order submission failed", err);
       toast.error(err instanceof Error ? err.message : "Could not submit order");
     }
   }
@@ -331,7 +332,11 @@ function CryptoExchangePage() {
             />
             <Row
               label={`Zealex buying rate (−${quote.margin}% margin)`}
-              value={effectiveQuote.zealexRate > 0 ? nairaFormatter.format(effectiveQuote.zealexRate) : "—"}
+              value={
+                effectiveQuote.zealexRate > 0
+                  ? nairaFormatter.format(effectiveQuote.zealexRate)
+                  : "—"
+              }
             />
             <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
               <span className="text-sm font-semibold">Estimated payout</span>
@@ -347,7 +352,13 @@ function CryptoExchangePage() {
           </div>
 
           <div className="flex items-center justify-end">
-            <Button type="button" variant="outline" size="sm" onClick={handleGenerateAddress} disabled={addressLoading}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleGenerateAddress}
+              disabled={addressLoading}
+            >
               {addressLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Generate deposit address
             </Button>

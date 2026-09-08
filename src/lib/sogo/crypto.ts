@@ -4,14 +4,33 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { extractSogoProviderTransactionId, extractSogoReference, extractSogoStatus, sogoRequest } from "./client";
 import type { CryptoAssetItem, ProviderReferenceResult, SogoEnvelope } from "./types";
 
+type SogoEnvelopeData = SogoEnvelope<unknown> & {
+  data?: unknown;
+  result?: unknown;
+};
+
+function getEnvelopeList(payload: unknown): unknown[] {
+  if (Array.isArray(payload)) return payload;
+
+  const container = payload as SogoEnvelopeData | null;
+  if (container && Array.isArray(container.data)) return container.data;
+  if (container && Array.isArray(container.result)) return container.result;
+
+  return [];
+}
+
+function getEnvelopeRecord(payload: unknown): Record<string, unknown> | undefined {
+  const container = payload as SogoEnvelopeData | null;
+  if (container && typeof container === "object") {
+    if (container.data && typeof container.data === "object") return container.data as Record<string, unknown>;
+    if (container.result && typeof container.result === "object") return container.result as Record<string, unknown>;
+    return container as Record<string, unknown>;
+  }
+  return undefined;
+}
+
 function normalizeAsset(payload: unknown): CryptoAssetItem[] {
-  const list = Array.isArray(payload)
-    ? payload
-    : Array.isArray((payload as any)?.data)
-      ? (payload as any).data
-      : Array.isArray((payload as any)?.result)
-        ? (payload as any).result
-        : [];
+  const list = getEnvelopeList(payload);
 
   return (list as unknown[]).map((item: unknown, idx: number) => {
     const row = (item ?? {}) as Record<string, unknown>;
@@ -58,13 +77,13 @@ export const getCryptoRate = createServerFn({ method: "GET" })
     const asset = encodeURIComponent(String(input.asset));
     const params: Record<string, string | number | undefined> = { amount: input.amount || 1 };
     const payload = await sogoRequest<SogoEnvelope<unknown>>(`/crypto/assets/${asset}/rate`, { params });
-    const row = (payload as any)?.data ?? (payload as any)?.result ?? payload;
+    const row = getEnvelopeRecord(payload) ?? (payload as Record<string, unknown> | null) ?? {};
     return {
-      asset: String((row as any)?.asset ?? input.asset),
-      symbol: String((row as any)?.symbol ?? input.asset),
-      network: String((row as any)?.network ?? ""),
-      rate: Number((row as any)?.rate ?? (row as any)?.buy_rate ?? (row as any)?.sell_rate ?? 0),
-      payout: Number((row as any)?.payout ?? 0),
+      asset: String(row.asset ?? input.asset),
+      symbol: String(row.symbol ?? input.asset),
+      network: String(row.network ?? ""),
+      rate: Number(row.rate ?? row.buy_rate ?? row.sell_rate ?? 0),
+      payout: Number(row.payout ?? 0),
     };
   });
 
@@ -85,20 +104,20 @@ export const generateCryptoDepositAddress = createServerFn({ method: "POST" })
       idempotencyKey,
     });
 
-    const payload = (raw as any)?.data ?? (raw as any)?.result ?? raw;
+    const payload = getEnvelopeRecord(raw) ?? (raw as Record<string, unknown> | null) ?? {};
     const providerReference = extractSogoReference(raw) ?? extractSogoReference(payload);
     const providerTransactionId = extractSogoProviderTransactionId(raw) ?? extractSogoProviderTransactionId(payload);
     const providerStatus = extractSogoStatus(raw) ?? extractSogoStatus(payload);
     const address = String(
-      (payload as any)?.address ??
-        (payload as any)?.wallet_address ??
-        (payload as any)?.deposit_address ??
+      payload.address ??
+        payload.wallet_address ??
+        payload.deposit_address ??
         "",
     );
     if (!address) throw new Error("Sogo did not return a deposit address.");
     if (!providerReference) throw new Error("Sogo did not return an address reference.");
 
-    await (supabaseAdmin as any).from("sogo_provider_records").upsert(
+    await supabaseAdmin.from("sogo_provider_records").upsert(
       {
         user_id: context.userId,
         operation_type: "crypto_deposit_address",
@@ -140,8 +159,9 @@ export const submitSandboxTestDeposit = createServerFn({ method: "POST" })
       idempotencyKey,
     });
 
-    const providerReference = extractSogoReference(raw) ?? extractSogoReference((raw as any)?.data ?? (raw as any)?.result);
-    const providerStatus = extractSogoStatus(raw) ?? extractSogoStatus((raw as any)?.data ?? (raw as any)?.result);
+    const envelopeRecord = getEnvelopeRecord(raw);
+    const providerReference = extractSogoReference(raw) ?? (envelopeRecord ? extractSogoReference(envelopeRecord) : undefined);
+    const providerStatus = extractSogoStatus(raw) ?? (envelopeRecord ? extractSogoStatus(envelopeRecord) : undefined);
     const result: ProviderReferenceResult = {
       providerReference,
       providerStatus,

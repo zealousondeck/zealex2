@@ -74,9 +74,9 @@ function ExchangePage() {
   const navigate = Route.useNavigate();
   const queryClient = useQueryClient();
 
-  const fetchCatalog = useServerFn(listGiftCardCatalog as any);
-  const fetchRates = useServerFn(listGiftCardRates as any);
-  const submitSell = useServerFn(submitGiftCardSell as any);
+  const fetchCatalog = useServerFn(listGiftCardCatalog);
+  const fetchRates = useServerFn(listGiftCardRates);
+  const submitSell = useServerFn(submitGiftCardSell);
 
   const catalogQuery = useQuery({
     queryKey: ["sogo", "giftcards", "catalog"],
@@ -111,13 +111,25 @@ function ExchangePage() {
     [brand, catalogCards],
   );
 
-  const selectedRate = (ratesQuery.data as Array<{ brand?: string; name?: string; rate?: number; buy_rate?: number; sell_rate?: number }> | undefined)?.find(
-    (rate) => rate.brand === selectedCard.brand || rate.name === selectedCard.brand,
-  );
+  const selectedRate = (
+    ratesQuery.data as
+      | Array<{
+          brand?: string;
+          name?: string;
+          rate?: number;
+          buy_rate?: number;
+          sell_rate?: number;
+        }>
+      | undefined
+  )?.find((rate) => rate.brand === selectedCard.brand || rate.name === selectedCard.brand);
 
   const numericAmount = Number(amount) || 0;
   const rate = Number(
-    selectedRate?.rate ?? selectedRate?.buy_rate ?? selectedRate?.sell_rate ?? selectedCard.ratePerUnit ?? 0,
+    selectedRate?.rate ??
+      selectedRate?.buy_rate ??
+      selectedRate?.sell_rate ??
+      selectedCard.ratePerUnit ??
+      0,
   );
   const estimatedValue = numericAmount * rate;
 
@@ -192,11 +204,7 @@ function ExchangePage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              {[
-                "Verified rates",
-                "Fast settlements",
-                "Trusted payouts",
-              ].map((item) => (
+              {["Verified rates", "Fast settlements", "Trusted payouts"].map((item) => (
                 <span
                   key={item}
                   className="rounded-full border border-border bg-secondary px-2.5 py-1 text-xs font-medium text-muted-foreground"
@@ -245,12 +253,12 @@ function ExchangePage() {
                 onValueChange={(value) => switchMode(value as TradeMode)}
                 className="space-y-5"
               >
-                <TabsList className="grid w-full grid-cols-2 rounded-2xl bg-secondary p-1">
+                <TabsList className="grid h-auto w-full grid-cols-2 items-stretch gap-1 rounded-2xl bg-secondary p-1">
                   {tradeModes.map((tab) => (
                     <TabsTrigger
                       key={tab.id}
                       value={tab.id}
-                      className="rounded-xl py-2.5 text-sm font-semibold"
+                      className="min-w-0 rounded-xl px-2 py-2.5 text-center text-xs font-semibold sm:text-sm"
                     >
                       {tab.label}
                     </TabsTrigger>
@@ -297,7 +305,9 @@ function ExchangePage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={selectedCard.currency}>{selectedCard.currency}</SelectItem>
+                          <SelectItem value={selectedCard.currency}>
+                            {selectedCard.currency}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -336,7 +346,9 @@ function ExchangePage() {
                         id="sell-upload"
                         value={additionalInfo}
                         onChange={(e) => setAdditionalInfo(e.target.value)}
-                        placeholder={cardType === "E-code" ? "Enter redemption code" : "Describe the card"}
+                        placeholder={
+                          cardType === "E-code" ? "Enter redemption code" : "Describe the card"
+                        }
                         className="h-12 rounded-xl"
                       />
                     </div>
@@ -383,7 +395,9 @@ function ExchangePage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={selectedCard.currency}>{selectedCard.currency}</SelectItem>
+                          <SelectItem value={selectedCard.currency}>
+                            {selectedCard.currency}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -396,7 +410,9 @@ function ExchangePage() {
                     </div>
                     <div className="mt-3 flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{selectedCard.brand}</p>
+                        <p className="text-sm font-semibold text-foreground">
+                          {selectedCard.brand}
+                        </p>
                         <p className="text-xs text-muted-foreground">{selectedCard.category}</p>
                       </div>
                       <span className="rounded-full bg-gold-soft px-2.5 py-1 text-xs font-bold text-foreground">
@@ -420,7 +436,9 @@ function ExchangePage() {
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-muted-foreground">Gift card value</span>
                     <span className="font-semibold text-foreground">
-                      {numericAmount > 0 ? `${nairaFormatter.format(Math.round(numericAmount))}` : "—"}
+                      {numericAmount > 0
+                        ? `${nairaFormatter.format(Math.round(numericAmount))}`
+                        : "—"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
@@ -498,7 +516,9 @@ function ExchangePage() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Card value</span>
                   <span className="font-semibold text-foreground">
-                    {numericAmount > 0 ? `${nairaFormatter.format(Math.round(numericAmount))}` : "—"}
+                    {numericAmount > 0
+                      ? `${nairaFormatter.format(Math.round(numericAmount))}`
+                      : "—"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -531,7 +551,10 @@ function ExchangePage() {
                 "Submit your trade",
                 "Receive your payout",
               ].map((step, index) => (
-                <div key={step} className="flex items-start gap-3 rounded-2xl border border-border bg-secondary/40 p-3">
+                <div
+                  key={step}
+                  className="flex items-start gap-3 rounded-2xl border border-border bg-secondary/40 p-3"
+                >
                   <span className="grid h-7 w-7 place-items-center rounded-full bg-gold-soft text-xs font-bold text-foreground">
                     {index + 1}
                   </span>
@@ -567,7 +590,10 @@ function PopularGiftCards({ catalogCards }: { catalogCards: GiftCardOption[] }) 
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {(catalogCards.slice(0, 4) as GiftCardOption[]).map((card) => (
-          <Card key={card.brand} className="border-border bg-card shadow-soft transition-colors hover:border-gold/40">
+          <Card
+            key={card.brand}
+            className="border-border bg-card shadow-soft transition-colors hover:border-gold/40"
+          >
             <CardContent className="space-y-3 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -593,7 +619,11 @@ function PopularGiftCards({ catalogCards }: { catalogCards: GiftCardOption[] }) 
                   <span className="font-bold">{nairaFormatter.format(card.ratePerUnit)}</span>
                   <span className="text-muted-foreground"> / unit</span>
                 </p>
-                <Button variant="outline" size="sm" className="h-8 rounded-lg px-3 text-xs font-semibold">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-lg px-3 text-xs font-semibold"
+                >
                   Trade
                 </Button>
               </div>
@@ -606,7 +636,11 @@ function PopularGiftCards({ catalogCards }: { catalogCards: GiftCardOption[] }) 
 }
 
 function RecentGiftCardActivity() {
-  const { data: rows = [], isLoading, isError } = useQuery({
+  const {
+    data: rows = [],
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["transactions", "giftcard-activity"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -650,11 +684,14 @@ function RecentGiftCardActivity() {
                 <div>
                   <p className="font-bold text-foreground">{row.asset ?? "Gift card"}</p>
                   <p className="text-xs text-muted-foreground">
-                    {row.type === "sell" ? "Sell" : "Buy"} · {new Date(row.created_at).toLocaleDateString()}
+                    {row.type === "sell" ? "Sell" : "Buy"} ·{" "}
+                    {new Date(row.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-bold text-gold">{nairaFormatter.format(Number(row.amount))}</span>
+                  <span className="font-bold text-gold">
+                    {nairaFormatter.format(Number(row.amount))}
+                  </span>
                   <StatusBadge status={row.status} />
                 </div>
               </CardContent>

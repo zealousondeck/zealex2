@@ -129,7 +129,10 @@ export function useSubmitCryptoOrder() {
         const { error } = await supabase.storage
           .from("kyc-documents")
           .upload(path, input.proof, { upsert: false });
-        if (error) throw error;
+        if (error) {
+          console.error("[Crypto] proof upload failed", { error, path, userId: uid });
+          throw error;
+        }
         proofPath = path;
       }
 
@@ -159,14 +162,29 @@ export function useSubmitCryptoOrder() {
         proof_path: proofPath,
         reviewer_notes: notes,
       } as never);
-      if (txError) throw txError;
+      if (txError) {
+        console.error("[Crypto] transaction insert failed", {
+          error: txError,
+          reference,
+          userId: uid,
+        });
+        throw txError;
+      }
 
-      await supabase.from("notifications").insert({
+      const { error: notificationError } = await supabase.from("notifications").insert({
         user_id: uid,
         title: "Crypto order submitted",
         body: `Your ${input.amount} ${input.symbol} (${input.network}) order is under review. Reference ${reference}.`,
         category: "trade",
       });
+      if (notificationError) {
+        console.error("[Crypto] notification insert failed", {
+          error: notificationError,
+          reference,
+          userId: uid,
+        });
+        throw notificationError;
+      }
 
       return { reference };
     },
