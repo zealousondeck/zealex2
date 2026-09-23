@@ -431,6 +431,10 @@ const updateTransactionStatusSchema = z.object({
   status: z.enum(["processing", "completed", "rejected", "cancelled"]),
   stage: z.string().min(1).max(40),
   note: z.string().max(400).optional(),
+}).superRefine((value, ctx) => {
+  if (value.status === "rejected" && !value.note?.trim()) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["note"], message: "A rejection reason is required" });
+  }
 });
 
 export const updateTransactionStatusServer = createServerFn({ method: "POST" })
@@ -442,21 +446,77 @@ export const updateTransactionStatusServer = createServerFn({ method: "POST" })
       .select("role")
       .eq("user_id", context.userId);
     if (roleError) throw new Error("Unable to verify administrator role");
-    if (!(roles ?? []).some((row) => ["admin", "super_admin", "finance"].includes(row.role))) {
+    if (!(roles ?? []).some((row) => ["ADMIN", "SUPER_ADMIN", "FINANCE"].includes(String(row.role).toUpperCase()))) {
       throw new Error("Unauthorized: admin privileges required");
     }
+
+    const stage = data.status === "completed"
+      ? "payout_executed"
+      : data.status === "rejected"
+        ? "rejected"
+        : data.stage;
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: result, error } = await (supabaseAdmin as any).rpc("settle_exchange_transaction", {
       _transaction_id: data.id,
       _admin_id: context.userId,
       _target_status: data.status,
-      _stage: data.stage,
-      _note: data.note ?? null,
+      _stage: stage,
+      _note: data.note?.trim() ?? null,
     });
     if (error) throw new Error(error.message || "Exchange update failed");
     return result as { ok: boolean; duplicate: boolean; status: string; amount: number };
   });
+
+const adminRateUpdateSchema = z.object({
+  kind: z.enum(["crypto", "giftcard"]),
+  id: z.string().uuid(),
+  buyRate: z.number().finite().nonnegative().max(1_000_000_000_000),
+  sellRate: z.number().finite().nonnegative().max(1_000_000_000_000),
+});
+
+export const updateAdminRateServer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => adminRateUpdateSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { data: roles, error: roleError } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (roleError) throw new Error("Unable to verify administrator role");
+    if (!(roles ?? []).some((row) => ["ADMIN", "SUPER_ADMIN", "FINANCE"].includes(String(row.role).toUpperCase()))) {
+      throw new Error("Unauthorized: admin privileges required");
+    }
+
+    const table = data.kind === "crypto" ? "crypto_rates" : "giftcard_rates";
+    const { data: updated, error } = await (await import("@/integrations/supabase/client.server")).supabaseAdmin
+      .from(table)
+      .update({ buy_rate: data.buyRate, sell_rate: data.sellRate } as never)
+      .eq("id", data.id)
+      .select("id, buy_rate, sell_rate")
+      .single();
+    if (error) throw new Error(error.message || "Rate update failed");
+
+    await logAudit("rate.admin.update", table, data.id, {
+      buy_rate: data.buyRate,
+      sell_rate: data.sellRate,
+      admin_id: context.userId,
+    });
+    return updated;
+  });
+
+export function useUpdateAdminRate() {
+  const qc = useQueryClient();
+  const updateRate = useServerFn(updateAdminRateServer);
+  return useMutation({
+    mutationFn: (data: { kind: "crypto" | "giftcard"; id: string; buyRate: number; sellRate: number }) =>
+      updateRate({ data }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["rates"] });
+      qc.invalidateQueries({ queryKey: ["admin"] });
+    },
+  });
+}
 
 export function useSetProfileStatus() {
   const qc = useQueryClient();

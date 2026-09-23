@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { roundMoney } from "@/lib/finance";
+import { reserveTradeIntent, updateTradeIntent } from "@/lib/sogo/idempotency";
 import {
   extractSogoProviderTransactionId,
   extractSogoReference,
@@ -137,7 +139,32 @@ export const submitGiftCardSell = createServerFn({ method: "POST" })
   .validator((data: unknown) => giftCardSellSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const idempotencyKey = crypto.randomUUID();
+    const reservation = await reserveTradeIntent({
+      userId: context.userId,
+      tradeType: "gift_card_sell",
+      payload: {
+        slug: data.slug,
+        cardCountry: data.cardCountry,
+        cardType: data.cardType,
+        cardCurrency: data.cardCurrency,
+        cardAmount: data.cardAmount,
+        additionalInfo: data.additionalInfo,
+        subType: data.subType,
+        specificCountry: data.specificCountry,
+      },
+    });
+
+    if (reservation.duplicate) {
+      if (reservation.providerReference && !reservation.providerReference.startsWith("intent:")) {
+        return {
+          providerReference: reservation.providerReference,
+          providerStatus: reservation.providerStatus,
+        };
+      }
+      throw new Error("This gift card trade is already being processed.");
+    }
+
+    const idempotencyKey = reservation.intentKey;
     const payload = new FormData();
     payload.set("slug", data.slug);
     payload.set("card_country", data.cardCountry);
@@ -149,70 +176,95 @@ export const submitGiftCardSell = createServerFn({ method: "POST" })
     if (data.subType) payload.set("sub_type", data.subType);
     if (data.specificCountry) payload.set("specific_country", data.specificCountry);
 
-    const raw = await sogoRequest<SogoEnvelope<unknown>>("/gift-cards/sell", {
-      method: "POST",
-      body: payload,
-      idempotencyKey,
-    });
+    const failedReference = `GC-${Date.now().toString(36).toUpperCase()}`;
 
-    const envelopeRecord = getEnvelopeRecord(raw);
-    const providerReference =
-      extractSogoReference(raw) ?? (envelopeRecord ? extractSogoReference(envelopeRecord) : undefined);
-    const providerTransactionId =
-      extractSogoProviderTransactionId(raw) ??
-      (envelopeRecord ? extractSogoProviderTransactionId(envelopeRecord) : undefined);
-    const providerStatus =
-      extractSogoStatus(raw) ?? (envelopeRecord ? extractSogoStatus(envelopeRecord) : undefined);
-    if (!providerReference) throw new Error("Sogo did not return a transaction reference.");
+    try {
+      const raw = await sogoRequest<SogoEnvelope<unknown>>("/gift-cards/sell", {
+        method: "POST",
+        body: payload,
+        idempotencyKey,
+      });
 
-    const responseData = (envelopeRecord && "data" in envelopeRecord ? envelopeRecord.data : raw) as Record<string, unknown> | null;
-    const transaction = responseData && typeof responseData.transaction === "object" ? (responseData.transaction as Record<string, unknown>) : undefined;
-    const payoutValue = responseData && "payout_amount" in responseData ? responseData.payout_amount : transaction?.amount;
-    const amount = Number(typeof payoutValue === "object" && payoutValue !== null ? (payoutValue as Record<string, unknown>).raw : (payoutValue ?? 0));
-    if (!(amount > 0)) throw new Error("Sogo did not return a valid payout amount.");
+      const envelopeRecord = getEnvelopeRecord(raw);
+      const providerReference =
+        extractSogoReference(raw) ?? (envelopeRecord ? extractSogoReference(envelopeRecord) : undefined);
+      const providerTransactionId =
+        extractSogoProviderTransactionId(raw) ??
+        (envelopeRecord ? extractSogoProviderTransactionId(envelopeRecord) : undefined);
+      const providerStatus =
+        extractSogoStatus(raw) ?? (envelopeRecord ? extractSogoStatus(envelopeRecord) : undefined);
+      if (!providerReference) throw new Error("Sogo did not return a transaction reference.");
 
-    const { data: localTransaction, error: transactionError } = await supabaseAdmin
-      .from("transactions")
-      .insert({
+      const responseData = (envelopeRecord && "data" in envelopeRecord ? envelopeRecord.data : raw) as Record<string, unknown> | null;
+      const transaction = responseData && typeof responseData.transaction === "object" ? (responseData.transaction as Record<string, unknown>) : undefined;
+      const payoutValue = responseData && "payout_amount" in responseData ? responseData.payout_amount : transaction?.amount;
+      const amount = roundMoney(
+        typeof payoutValue === "object" && payoutValue !== null ? (payoutValue as Record<string, unknown>).raw : (payoutValue ?? 0),
+      );
+      if (!(amount > 0)) throw new Error("Sogo did not return a valid payout amount.");
+
+      const { data: localTransaction, error: transactionError } = await supabaseAdmin
+        .from("transactions")
+        .insert({
+          user_id: context.userId,
+          type: "sell",
+          category: "giftcard",
+          asset: data.slug,
+          amount,
+          quantity: data.cardAmount,
+          status: "pending",
+          stage: "submitted",
+          reference: providerReference,
+          reviewer_notes: providerStatus
+            ? `Sogo provider status: ${providerStatus}`
+            : "Sogo sell request submitted",
+        } as never)
+        .select("id")
+        .single();
+      if (transactionError || !localTransaction?.id)
+        throw new Error("Unable to record the gift-card trade.");
+
+      await updateTradeIntent(reservation.reservationId!, {
+        providerReference,
+        providerTransactionId: providerTransactionId ?? null,
+        providerStatus: providerStatus ?? "pending",
+        transactionId: localTransaction.id,
+      });
+
+      const result: ProviderReferenceResult = {
+        providerReference,
+        providerStatus,
+        providerTransactionId: transaction && typeof transaction.id !== "undefined" ? String(transaction.id) : undefined,
+      };
+
+      return result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("[SOGO] gift-card sell failed", {
+        userId: context.userId,
+        providerReference: failedReference,
+        asset: data.slug,
+        amount: data.cardAmount,
+        error: message,
+      });
+
+      if (reservation.reservationId) {
+        await updateTradeIntent(reservation.reservationId, { providerStatus: "failed" });
+      }
+
+      await supabaseAdmin.from("transactions").insert({
         user_id: context.userId,
         type: "sell",
         category: "giftcard",
         asset: data.slug,
-        amount,
+        amount: roundMoney(data.cardAmount),
         quantity: data.cardAmount,
-        status: "pending",
-        stage: "submitted",
-        reference: providerReference,
-        reviewer_notes: providerStatus
-          ? `Sogo provider status: ${providerStatus}`
-          : "Sogo sell request submitted",
-      } as never)
-      .select("id")
-      .single();
-    if (transactionError || !localTransaction?.id)
-      throw new Error("Unable to record the gift-card trade.");
+        status: "failed",
+        stage: "provider_timeout",
+        reference: failedReference,
+        reviewer_notes: `Sogo request failed: ${message}`,
+      } as never);
 
-    const { error: providerError } = await supabaseAdmin
-      .from("sogo_provider_records")
-      .upsert(
-        {
-          user_id: context.userId,
-          transaction_id: localTransaction.id,
-          operation_type: "gift_card_sell",
-          provider_reference: providerReference,
-          provider_transaction_id: providerTransactionId ?? null,
-          provider_status: providerStatus ?? "pending",
-          idempotency_key: idempotencyKey,
-        } as never,
-        { onConflict: "provider_reference" },
-      );
-    if (providerError) throw new Error("Unable to record the Sogo trade reference.");
-
-    const result: ProviderReferenceResult = {
-      providerReference,
-      providerStatus,
-      providerTransactionId: transaction && typeof transaction.id !== "undefined" ? String(transaction.id) : undefined,
-    };
-
-    return result;
+      throw error;
+    }
   });

@@ -1,14 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useAdminTransactions, useUpdateTransactionStatus, type AdminTx } from "@/lib/admin-data";
+import {
+  useAdminTransactions,
+  useUpdateAdminRate,
+  useUpdateTransactionStatus,
+  type AdminTx,
+} from "@/lib/admin-data";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { nairaFormatter } from "@/lib/market-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useHasPermission } from "@/lib/permissions";
+import { useCryptoRates, useGiftcardRates } from "@/lib/rates";
 
 export const Route = createFileRoute("/_authenticated/admin/exchange")({
   component: () => <TradeConsole category="crypto" title="Crypto Exchange Orders" />,
@@ -59,8 +66,8 @@ export function TradeConsole({
     setNotes((t as any).reviewer_notes ?? "");
     setProofUrl(null);
     const proof = (t as any).proof_path as string | undefined;
-    if (proof) {
-      const { data: s } = await supabase.storage.from("kyc-documents").createSignedUrl(proof, 300);
+    if (proof && proof !== "pending_manual_upload") {
+      const { data: s } = await supabase.storage.from("Trades").createSignedUrl(proof, 300);
       setProofUrl(s?.signedUrl ?? null);
     }
   }
@@ -71,12 +78,12 @@ export function TradeConsole({
       return toast.error("Reviewer note required");
     const stage =
       s === "completed"
-        ? "paid"
+        ? "payout_executed"
         : s === "processing"
           ? "under_review"
           : s === "cancelled"
             ? "cancelled"
-            : "under_review";
+            : "rejected";
     try {
       await mut.mutateAsync({
         id: selected.id,
@@ -115,6 +122,8 @@ export function TradeConsole({
           ))}
         </div>
       </div>
+
+      <RateController category={category} />
 
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="overflow-x-auto">
@@ -246,6 +255,78 @@ export function TradeConsole({
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function RateController({ category }: { category: "crypto" | "giftcard" }) {
+  const cryptoRates = useCryptoRates();
+  const giftcardRates = useGiftcardRates();
+  const updateRate = useUpdateAdminRate();
+  const rows = category === "crypto" ? cryptoRates.data ?? [] : giftcardRates.data ?? [];
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4">
+      <div className="mb-3">
+        <h2 className="font-bold">{category === "crypto" ? "Crypto" : "Gift card"} pricing</h2>
+        <p className="text-xs text-muted-foreground">Update the buy and sell values used by this console.</p>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {rows.map((row) => (
+          <RateEditor
+            key={row.id}
+            label={category === "crypto" ? `${row.symbol} · ${row.network}` : `${row.brand} · ${row.currency}`}
+            id={row.id}
+            kind={category}
+            buyRate={row.buy_rate}
+            sellRate={row.sell_rate}
+            pending={updateRate.isPending}
+            onSave={(buyRate, sellRate) =>
+              updateRate.mutate({ kind: category, id: row.id, buyRate, sellRate })
+            }
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RateEditor({
+  label,
+  id,
+  kind,
+  buyRate,
+  sellRate,
+  pending,
+  onSave,
+}: {
+  label: string;
+  id: string;
+  kind: "crypto" | "giftcard";
+  buyRate: number;
+  sellRate: number;
+  pending: boolean;
+  onSave: (buyRate: number, sellRate: number) => void;
+}) {
+  const [buy, setBuy] = useState(String(buyRate));
+  const [sell, setSell] = useState(String(sellRate));
+
+  return (
+    <div className="rounded-xl border border-border bg-secondary/30 p-3">
+      <p className="mb-2 truncate text-sm font-semibold">{label}</p>
+      <div className="grid grid-cols-2 gap-2">
+        <Input type="number" min="0" step="0.01" value={buy} onChange={(e) => setBuy(e.target.value)} aria-label={`${kind} buy rate`} />
+        <Input type="number" min="0" step="0.01" value={sell} onChange={(e) => setSell(e.target.value)} aria-label={`${kind} sell rate`} />
+      </div>
+      <Button
+        className="mt-2 w-full"
+        size="sm"
+        variant="gold"
+        disabled={pending || !Number.isFinite(Number(buy)) || !Number.isFinite(Number(sell))}
+        onClick={() => onSave(Number(buy), Number(sell))}
+      >
+        Save pricing
+      </Button>
     </div>
   );
 }

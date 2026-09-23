@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getCryptoMarket, type MarketPrice } from "./crypto-market.functions";
 import { useAppSettings, useUpdateSetting } from "./settings";
+import { computeNairaPayout } from "./finance";
 
 export type SupportedCoin = {
   symbol: string;
@@ -93,7 +94,7 @@ export function buildQuote({
   return {
     marketNgn,
     zealexRate,
-    payout: zealexRate * (Number.isFinite(amount) ? amount : 0),
+    payout: computeNairaPayout(Number.isFinite(amount) ? amount : 0, zealexRate),
     margin,
     live: Boolean(live?.ngn && live.ngn > 0),
   };
@@ -124,16 +125,30 @@ export function useSubmitCryptoOrder() {
 
       let proofPath: string | null = null;
       if (input.proof) {
-        const ext = input.proof.name.split(".").pop() ?? "jpg";
+        const ext = input.proof.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
         const path = `${uid}/crypto/${Date.now()}.${ext}`;
-        const { error } = await supabase.storage
-          .from("kyc-documents")
-          .upload(path, input.proof, { upsert: false });
-        if (error) {
-          console.error("[Crypto] proof upload failed", { error, path, userId: uid });
-          throw error;
+        try {
+          const { error } = await supabase.storage
+            .from("Trades")
+            .upload(path, input.proof, { upsert: false });
+          if (error) {
+            console.warn("[Crypto] proof upload failed; continuing with manual review", {
+              error: error.message,
+              path,
+              userId: uid,
+            });
+            proofPath = "pending_manual_upload";
+          } else {
+            proofPath = path;
+          }
+        } catch (error) {
+          console.warn("[Crypto] proof upload crashed; continuing with manual review", {
+            error: error instanceof Error ? error.message : String(error),
+            path,
+            userId: uid,
+          });
+          proofPath = "pending_manual_upload";
         }
-        proofPath = path;
       }
 
       const reference = `CX-${Date.now().toString(36).toUpperCase()}-${Math.random()
@@ -154,7 +169,7 @@ export function useSubmitCryptoOrder() {
         type: "sell",
         category: "crypto",
         asset: input.symbol,
-        amount: Math.round(input.payout),
+        amount: computeNairaPayout(input.amount, input.rate),
         quantity: input.amount,
         status: "pending",
         stage: "submitted",

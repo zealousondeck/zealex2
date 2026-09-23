@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { computeNairaPayout, roundMoney } from "@/lib/finance";
+import { reserveTradeIntent, updateTradeIntent } from "@/lib/sogo/idempotency";
 import { extractSogoProviderTransactionId, extractSogoReference, extractSogoStatus, sogoRequest } from "./client";
 import type { CryptoAssetItem, ProviderReferenceResult, SogoEnvelope } from "./types";
 
@@ -78,12 +80,17 @@ export const getCryptoRate = createServerFn({ method: "GET" })
     const params: Record<string, string | number | undefined> = { amount: input.amount || 1 };
     const payload = await sogoRequest<SogoEnvelope<unknown>>(`/crypto/assets/${asset}/rate`, { params });
     const row = getEnvelopeRecord(payload) ?? (payload as Record<string, unknown> | null) ?? {};
+    const rate = roundMoney(row.rate ?? row.buy_rate ?? row.sell_rate ?? 0);
+    const payout = roundMoney(
+      computeNairaPayout(Number(input.amount || 1), rate),
+    );
+
     return {
       asset: String(row.asset ?? input.asset),
       symbol: String(row.symbol ?? input.asset),
       network: String(row.network ?? ""),
-      rate: Number(row.rate ?? row.buy_rate ?? row.sell_rate ?? 0),
-      payout: Number(row.payout ?? 0),
+      rate,
+      payout,
     };
   });
 
@@ -94,46 +101,92 @@ export const generateCryptoDepositAddress = createServerFn({ method: "POST" })
   .validator((data: unknown) => depositAddressSchema.parse(data))
   .handler(async ({ data: input, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const idempotencyKey = crypto.randomUUID();
-    const raw = await sogoRequest<SogoEnvelope<unknown>>("/crypto/deposit-address", {
-      method: "POST",
-      body: {
+    const reservation = await reserveTradeIntent({
+      userId: context.userId,
+      tradeType: "crypto_deposit_address",
+      payload: {
         asset: input.asset,
         network: input.network,
       },
-      idempotencyKey,
     });
 
-    const payload = getEnvelopeRecord(raw) ?? (raw as Record<string, unknown> | null) ?? {};
-    const providerReference = extractSogoReference(raw) ?? extractSogoReference(payload);
-    const providerTransactionId = extractSogoProviderTransactionId(raw) ?? extractSogoProviderTransactionId(payload);
-    const providerStatus = extractSogoStatus(raw) ?? extractSogoStatus(payload);
-    const address = String(
-      payload.address ??
-        payload.wallet_address ??
-        payload.deposit_address ??
-        "",
-    );
-    if (!address) throw new Error("Sogo did not return a deposit address.");
-    if (!providerReference) throw new Error("Sogo did not return an address reference.");
+    if (reservation.duplicate) {
+      if (reservation.providerReference && !reservation.providerReference.startsWith("intent:")) {
+        return {
+          address: "",
+          providerReference: reservation.providerReference,
+          providerStatus: reservation.providerStatus,
+        };
+      }
+      throw new Error("This crypto deposit address request is already in progress.");
+    }
 
-    await supabaseAdmin.from("sogo_provider_records").upsert(
-      {
+    const idempotencyKey = reservation.intentKey;
+
+    try {
+      const raw = await sogoRequest<SogoEnvelope<unknown>>("/crypto/deposit-address", {
+        method: "POST",
+        body: {
+          asset: input.asset,
+          network: input.network,
+        },
+        idempotencyKey,
+      });
+
+      const payload = getEnvelopeRecord(raw) ?? (raw as Record<string, unknown> | null) ?? {};
+      const providerReference = extractSogoReference(raw) ?? extractSogoReference(payload);
+      const providerTransactionId = extractSogoProviderTransactionId(raw) ?? extractSogoProviderTransactionId(payload);
+      const providerStatus = extractSogoStatus(raw) ?? extractSogoStatus(payload);
+      const address = String(
+        payload.address ??
+          payload.wallet_address ??
+          payload.deposit_address ??
+          "",
+      );
+      if (!address) throw new Error("Sogo did not return a deposit address.");
+      if (!providerReference) throw new Error("Sogo did not return an address reference.");
+
+      await updateTradeIntent(reservation.reservationId!, {
+        providerReference,
+        providerTransactionId: providerTransactionId ?? null,
+        providerStatus: providerStatus ?? "active",
+      });
+
+      return {
+        address,
+        providerReference,
+        providerStatus,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const reference = `CD-${Date.now().toString(36).toUpperCase()}`;
+      console.error("[SOGO] crypto deposit address failed", {
+        userId: context.userId,
+        asset: input.asset,
+        network: input.network,
+        reference,
+        error: message,
+      });
+
+      if (reservation.reservationId) {
+        await updateTradeIntent(reservation.reservationId, { providerStatus: "failed" });
+      }
+
+      await supabaseAdmin.from("transactions").insert({
         user_id: context.userId,
-        operation_type: "crypto_deposit_address",
-        provider_reference: providerReference,
-        provider_transaction_id: providerTransactionId ?? null,
-        provider_status: providerStatus ?? "active",
-        idempotency_key: idempotencyKey,
-      } as never,
-      { onConflict: "provider_reference" },
-    );
+        type: "buy",
+        category: "crypto",
+        asset: input.asset,
+        amount: 0,
+        quantity: 0,
+        status: "failed",
+        stage: "provider_timeout",
+        reference,
+        reviewer_notes: `Sogo provider request failed: ${message}`,
+      } as never);
 
-    return {
-      address,
-      providerReference,
-      providerStatus,
-    };
+      throw error;
+    }
   });
 
 const testDepositSchema = z.object({
@@ -146,25 +199,77 @@ const testDepositSchema = z.object({
 export const submitSandboxTestDeposit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data: unknown) => testDepositSchema.parse(data))
-  .handler(async ({ data: input }) => {
-    const idempotencyKey = crypto.randomUUID();
-    const raw = await sogoRequest<SogoEnvelope<unknown>>("/crypto/test-deposit", {
-      method: "POST",
-      body: {
+  .handler(async ({ data: input, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const reservation = await reserveTradeIntent({
+      userId: context.userId,
+      tradeType: "crypto_test_deposit",
+      payload: {
         asset: input.asset,
-        network: input.network ?? "",
-        crypto_amount: input.amount ?? 0,
-        test_reference: input.testReference,
+        network: input.network,
+        cryptoAmount: input.amount,
+        testReference: input.testReference,
       },
-      idempotencyKey,
     });
 
-    const envelopeRecord = getEnvelopeRecord(raw);
-    const providerReference = extractSogoReference(raw) ?? (envelopeRecord ? extractSogoReference(envelopeRecord) : undefined);
-    const providerStatus = extractSogoStatus(raw) ?? (envelopeRecord ? extractSogoStatus(envelopeRecord) : undefined);
-    const result: ProviderReferenceResult = {
-      providerReference,
-      providerStatus,
-    };
-    return result;
+    if (reservation.duplicate) {
+      if (reservation.providerReference && !reservation.providerReference.startsWith("intent:")) {
+        return {
+          providerReference: reservation.providerReference,
+          providerStatus: reservation.providerStatus,
+        };
+      }
+      throw new Error("This sandbox test deposit is already being processed.");
+    }
+
+    const idempotencyKey = reservation.intentKey;
+
+    try {
+      const raw = await sogoRequest<SogoEnvelope<unknown>>("/crypto/test-deposit", {
+        method: "POST",
+        body: {
+          asset: input.asset,
+          network: input.network ?? "",
+          crypto_amount: input.amount ?? 0,
+          test_reference: input.testReference,
+        },
+        idempotencyKey,
+      });
+
+      const envelopeRecord = getEnvelopeRecord(raw);
+      const providerReference = extractSogoReference(raw) ?? (envelopeRecord ? extractSogoReference(envelopeRecord) : undefined);
+      const providerStatus = extractSogoStatus(raw) ?? (envelopeRecord ? extractSogoStatus(envelopeRecord) : undefined);
+      const result: ProviderReferenceResult = {
+        providerReference,
+        providerStatus,
+      };
+      return result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("[SOGO] sandbox test deposit failed", {
+        userId: context.userId,
+        asset: input.asset,
+        isSandbox: true,
+        error: message,
+      });
+
+      if (reservation.reservationId) {
+        await updateTradeIntent(reservation.reservationId, { providerStatus: "failed" });
+      }
+
+      await supabaseAdmin.from("transactions").insert({
+        user_id: context.userId,
+        type: "buy",
+        category: "crypto",
+        asset: input.asset,
+        amount: roundMoney(input.amount),
+        quantity: input.amount,
+        status: "failed",
+        stage: "provider_timeout",
+        reference: `SD-${Date.now().toString(36).toUpperCase()}`,
+        reviewer_notes: `Sandbox deposit failed: ${message}`,
+      } as never);
+
+      throw error;
+    }
   });

@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sogoRequest } from "@/lib/sogo/client";
@@ -42,6 +43,31 @@ const eventNames: SogoEventName[] = [
   "transaction.refunded",
   "transaction.cancelled",
 ];
+
+function verifySogoWebhook(request: Request, rawBody: string): boolean {
+  const secret = process.env.SOGO_WEBHOOK_SECRET;
+  const headerValue =
+    request.headers.get("x-sogo-signature") ??
+    request.headers.get("x-signature") ??
+    "";
+
+  if (!secret || !headerValue.trim()) {
+    return false;
+  }
+
+  const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+  const actual = headerValue.trim();
+
+  if (actual.length !== expected.length) {
+    return false;
+  }
+
+  try {
+    return crypto.timingSafeEqual(Buffer.from(actual.toLowerCase()), Buffer.from(expected.toLowerCase()));
+  } catch {
+    return false;
+  }
+}
 
 function normalizeSogoStatus(value: unknown): string {
   return String(value ?? "").trim().toLowerCase();
@@ -125,6 +151,10 @@ export const Route = createFileRoute("/sogo-webhook")({
       POST: async ({ request }) => {
         const rawBody = await request.text();
         if (!rawBody.trim()) return new Response("Empty payload", { status: 400 });
+
+        if (!verifySogoWebhook(request, rawBody)) {
+          return new Response("Invalid Sogo webhook signature", { status: 401 });
+        }
 
         let payload: unknown;
         try {
