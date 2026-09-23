@@ -107,7 +107,12 @@ function AnnouncementsPage() {
                 )}
               >
                 <div className="mb-2 flex items-center gap-2">
-                  <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase", meta.color)}>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase",
+                      meta.color,
+                    )}
+                  >
                     <Icon className="h-3 w-3" /> {meta.label}
                   </span>
                   {unread && (
@@ -150,11 +155,16 @@ function AdminPublisher() {
     try {
       const { data: userData } = await supabase.auth.getUser();
       const { error } = await supabase.from("announcements").insert({
-        title, body, category, active: true, published_by: userData.user?.id,
+        title,
+        body,
+        category,
+        active: true,
+        published_by: userData.user?.id,
       });
       if (error) throw error;
       toast.success("Announcement published");
-      setTitle(""); setBody("");
+      setTitle("");
+      setBody("");
       qc.invalidateQueries({ queryKey: ["announcements"] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed");
@@ -169,12 +179,19 @@ function AdminPublisher() {
       <div className="grid gap-3 sm:grid-cols-[1fr_180px]">
         <div className="space-y-1.5">
           <Label htmlFor="title">Title</Label>
-          <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} />
+          <Input
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={120}
+          />
         </div>
         <div className="space-y-1.5">
           <Label>Category</Label>
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="update">Update</SelectItem>
               <SelectItem value="maintenance">Maintenance</SelectItem>
@@ -185,7 +202,13 @@ function AdminPublisher() {
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="body">Body</Label>
-        <Textarea id="body" rows={3} value={body} onChange={(e) => setBody(e.target.value)} maxLength={1000} />
+        <Textarea
+          id="body"
+          rows={3}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          maxLength={1000}
+        />
       </div>
       <Button type="submit" variant="gold" disabled={submitting}>
         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -208,10 +231,24 @@ function AdminActions({ a }: { a: Announcement }) {
   }
   return (
     <div className="mt-3 flex gap-2 border-t border-border pt-3">
-      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); toggle(); }}>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={(e) => {
+          e.stopPropagation();
+          toggle();
+        }}
+      >
         {a.active ? "Hide" : "Show"}
       </Button>
-      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); remove(); }}>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={(e) => {
+          e.stopPropagation();
+          remove();
+        }}
+      >
         <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
       </Button>
     </div>

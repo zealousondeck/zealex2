@@ -32,7 +32,11 @@ export function usePaymentMethods() {
 export function useAddPaymentMethod() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: Omit<PaymentMethod, "id" | "user_id" | "created_at" | "is_default"> & { is_default?: boolean }) => {
+    mutationFn: async (
+      input: Omit<PaymentMethod, "id" | "user_id" | "created_at" | "is_default"> & {
+        is_default?: boolean;
+      },
+    ) => {
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
       if (!uid) throw new Error("Not signed in");

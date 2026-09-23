@@ -9,8 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SogoWebhookRouteImport } from './routes/sogo-webhook'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PaystackWebhookRouteImport } from './routes/paystack-webhook'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -25,8 +27,10 @@ import { Route as AuthenticatedDashboardReferralsRouteImport } from './routes/_a
 import { Route as AuthenticatedDashboardProfileRouteImport } from './routes/_authenticated/dashboard.profile'
 import { Route as AuthenticatedDashboardNotificationsRouteImport } from './routes/_authenticated/dashboard.notifications'
 import { Route as AuthenticatedDashboardKycRouteImport } from './routes/_authenticated/dashboard.kyc'
+import { Route as AuthenticatedDashboardExchangeHistoryRouteImport } from './routes/_authenticated/dashboard.exchange-history'
 import { Route as AuthenticatedDashboardExchangeRouteImport } from './routes/_authenticated/dashboard.exchange'
 import { Route as AuthenticatedDashboardDepositRouteImport } from './routes/_authenticated/dashboard.deposit'
+import { Route as AuthenticatedDashboardCryptoRouteImport } from './routes/_authenticated/dashboard.crypto'
 import { Route as AuthenticatedDashboardAnnouncementsRouteImport } from './routes/_authenticated/dashboard.announcements'
 import { Route as AuthenticatedAdminWithdrawalsRouteImport } from './routes/_authenticated/admin.withdrawals'
 import { Route as AuthenticatedAdminWalletsRouteImport } from './routes/_authenticated/admin.wallets'
@@ -44,6 +48,11 @@ import { Route as AuthenticatedAdminDepositsRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminAuditRouteImport } from './routes/_authenticated/admin.audit'
 import { Route as AuthenticatedAdminAnnouncementsRouteImport } from './routes/_authenticated/admin.announcements'
 
+const SogoWebhookRoute = SogoWebhookRouteImport.update({
+  id: '/sogo-webhook',
+  path: '/sogo-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -52,6 +61,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaystackWebhookRoute = PaystackWebhookRouteImport.update({
+  id: '/paystack-webhook',
+  path: '/paystack-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -129,6 +143,12 @@ const AuthenticatedDashboardKycRoute =
     path: '/kyc',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardExchangeHistoryRoute =
+  AuthenticatedDashboardExchangeHistoryRouteImport.update({
+    id: '/exchange-history',
+    path: '/exchange-history',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardExchangeRoute =
   AuthenticatedDashboardExchangeRouteImport.update({
     id: '/exchange',
@@ -139,6 +159,12 @@ const AuthenticatedDashboardDepositRoute =
   AuthenticatedDashboardDepositRouteImport.update({
     id: '/deposit',
     path: '/deposit',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardCryptoRoute =
+  AuthenticatedDashboardCryptoRouteImport.update({
+    id: '/crypto',
+    path: '/crypto',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
 const AuthenticatedDashboardAnnouncementsRoute =
@@ -236,8 +262,10 @@ const AuthenticatedAdminAnnouncementsRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/paystack-webhook': typeof PaystackWebhookRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sogo-webhook': typeof SogoWebhookRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/auth/forgot': typeof AuthForgotRoute
@@ -258,8 +286,10 @@ export interface FileRoutesByFullPath {
   '/admin/wallets': typeof AuthenticatedAdminWalletsRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/dashboard/announcements': typeof AuthenticatedDashboardAnnouncementsRoute
+  '/dashboard/crypto': typeof AuthenticatedDashboardCryptoRoute
   '/dashboard/deposit': typeof AuthenticatedDashboardDepositRoute
   '/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
+  '/dashboard/exchange-history': typeof AuthenticatedDashboardExchangeHistoryRoute
   '/dashboard/kyc': typeof AuthenticatedDashboardKycRoute
   '/dashboard/notifications': typeof AuthenticatedDashboardNotificationsRoute
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
@@ -271,8 +301,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/paystack-webhook': typeof PaystackWebhookRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sogo-webhook': typeof SogoWebhookRoute
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
@@ -291,8 +323,10 @@ export interface FileRoutesByTo {
   '/admin/wallets': typeof AuthenticatedAdminWalletsRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/dashboard/announcements': typeof AuthenticatedDashboardAnnouncementsRoute
+  '/dashboard/crypto': typeof AuthenticatedDashboardCryptoRoute
   '/dashboard/deposit': typeof AuthenticatedDashboardDepositRoute
   '/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
+  '/dashboard/exchange-history': typeof AuthenticatedDashboardExchangeHistoryRoute
   '/dashboard/kyc': typeof AuthenticatedDashboardKycRoute
   '/dashboard/notifications': typeof AuthenticatedDashboardNotificationsRoute
   '/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
@@ -306,8 +340,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/paystack-webhook': typeof PaystackWebhookRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sogo-webhook': typeof SogoWebhookRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/auth/forgot': typeof AuthForgotRoute
@@ -328,8 +364,10 @@ export interface FileRoutesById {
   '/_authenticated/admin/wallets': typeof AuthenticatedAdminWalletsRoute
   '/_authenticated/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/_authenticated/dashboard/announcements': typeof AuthenticatedDashboardAnnouncementsRoute
+  '/_authenticated/dashboard/crypto': typeof AuthenticatedDashboardCryptoRoute
   '/_authenticated/dashboard/deposit': typeof AuthenticatedDashboardDepositRoute
   '/_authenticated/dashboard/exchange': typeof AuthenticatedDashboardExchangeRoute
+  '/_authenticated/dashboard/exchange-history': typeof AuthenticatedDashboardExchangeHistoryRoute
   '/_authenticated/dashboard/kyc': typeof AuthenticatedDashboardKycRoute
   '/_authenticated/dashboard/notifications': typeof AuthenticatedDashboardNotificationsRoute
   '/_authenticated/dashboard/profile': typeof AuthenticatedDashboardProfileRoute
@@ -343,8 +381,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/paystack-webhook'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/sogo-webhook'
     | '/admin'
     | '/dashboard'
     | '/auth/forgot'
@@ -365,8 +405,10 @@ export interface FileRouteTypes {
     | '/admin/wallets'
     | '/admin/withdrawals'
     | '/dashboard/announcements'
+    | '/dashboard/crypto'
     | '/dashboard/deposit'
     | '/dashboard/exchange'
+    | '/dashboard/exchange-history'
     | '/dashboard/kyc'
     | '/dashboard/notifications'
     | '/dashboard/profile'
@@ -378,8 +420,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/paystack-webhook'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/sogo-webhook'
     | '/auth/forgot'
     | '/auth/verify'
     | '/admin/announcements'
@@ -398,8 +442,10 @@ export interface FileRouteTypes {
     | '/admin/wallets'
     | '/admin/withdrawals'
     | '/dashboard/announcements'
+    | '/dashboard/crypto'
     | '/dashboard/deposit'
     | '/dashboard/exchange'
+    | '/dashboard/exchange-history'
     | '/dashboard/kyc'
     | '/dashboard/notifications'
     | '/dashboard/profile'
@@ -412,8 +458,10 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/paystack-webhook'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/sogo-webhook'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
     | '/auth/forgot'
@@ -434,8 +482,10 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/wallets'
     | '/_authenticated/admin/withdrawals'
     | '/_authenticated/dashboard/announcements'
+    | '/_authenticated/dashboard/crypto'
     | '/_authenticated/dashboard/deposit'
     | '/_authenticated/dashboard/exchange'
+    | '/_authenticated/dashboard/exchange-history'
     | '/_authenticated/dashboard/kyc'
     | '/_authenticated/dashboard/notifications'
     | '/_authenticated/dashboard/profile'
@@ -449,12 +499,21 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  PaystackWebhookRoute: typeof PaystackWebhookRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SogoWebhookRoute: typeof SogoWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sogo-webhook': {
+      id: '/sogo-webhook'
+      path: '/sogo-webhook'
+      fullPath: '/sogo-webhook'
+      preLoaderRoute: typeof SogoWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -467,6 +526,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/paystack-webhook': {
+      id: '/paystack-webhook'
+      path: '/paystack-webhook'
+      fullPath: '/paystack-webhook'
+      preLoaderRoute: typeof PaystackWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -567,6 +633,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardKycRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/exchange-history': {
+      id: '/_authenticated/dashboard/exchange-history'
+      path: '/exchange-history'
+      fullPath: '/dashboard/exchange-history'
+      preLoaderRoute: typeof AuthenticatedDashboardExchangeHistoryRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/exchange': {
       id: '/_authenticated/dashboard/exchange'
       path: '/exchange'
@@ -579,6 +652,13 @@ declare module '@tanstack/react-router' {
       path: '/deposit'
       fullPath: '/dashboard/deposit'
       preLoaderRoute: typeof AuthenticatedDashboardDepositRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/dashboard/crypto': {
+      id: '/_authenticated/dashboard/crypto'
+      path: '/crypto'
+      fullPath: '/dashboard/crypto'
+      preLoaderRoute: typeof AuthenticatedDashboardCryptoRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
     '/_authenticated/dashboard/announcements': {
@@ -739,8 +819,10 @@ const AuthenticatedAdminRouteWithChildren =
 
 interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardAnnouncementsRoute: typeof AuthenticatedDashboardAnnouncementsRoute
+  AuthenticatedDashboardCryptoRoute: typeof AuthenticatedDashboardCryptoRoute
   AuthenticatedDashboardDepositRoute: typeof AuthenticatedDashboardDepositRoute
   AuthenticatedDashboardExchangeRoute: typeof AuthenticatedDashboardExchangeRoute
+  AuthenticatedDashboardExchangeHistoryRoute: typeof AuthenticatedDashboardExchangeHistoryRoute
   AuthenticatedDashboardKycRoute: typeof AuthenticatedDashboardKycRoute
   AuthenticatedDashboardNotificationsRoute: typeof AuthenticatedDashboardNotificationsRoute
   AuthenticatedDashboardProfileRoute: typeof AuthenticatedDashboardProfileRoute
@@ -753,8 +835,11 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
   {
     AuthenticatedDashboardAnnouncementsRoute:
       AuthenticatedDashboardAnnouncementsRoute,
+    AuthenticatedDashboardCryptoRoute: AuthenticatedDashboardCryptoRoute,
     AuthenticatedDashboardDepositRoute: AuthenticatedDashboardDepositRoute,
     AuthenticatedDashboardExchangeRoute: AuthenticatedDashboardExchangeRoute,
+    AuthenticatedDashboardExchangeHistoryRoute:
+      AuthenticatedDashboardExchangeHistoryRoute,
     AuthenticatedDashboardKycRoute: AuthenticatedDashboardKycRoute,
     AuthenticatedDashboardNotificationsRoute:
       AuthenticatedDashboardNotificationsRoute,
@@ -798,8 +883,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  PaystackWebhookRoute: PaystackWebhookRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SogoWebhookRoute: SogoWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -101,9 +101,7 @@ export function downloadReceiptCsv(input: ReceiptInput) {
     ["note", input.note ?? ""],
   ];
   const csv =
-    header.map(esc).join(",") +
-    "\n" +
-    rows.map(([k, v]) => `${esc(k)},${esc(v)}`).join("\n");
+    header.map(esc).join(",") + "\n" + rows.map(([k, v]) => `${esc(k)},${esc(v)}`).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

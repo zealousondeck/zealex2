@@ -137,9 +137,7 @@ function AuthPage() {
                 onClick={() => setTab(t)}
                 className={cn(
                   "rounded-lg py-2 text-sm font-bold capitalize transition-colors",
-                  tab === t
-                    ? "bg-card text-foreground shadow-soft"
-                    : "text-muted-foreground",
+                  tab === t ? "bg-card text-foreground shadow-soft" : "text-muted-foreground",
                 )}
               >
                 {t === "login" ? "Log in" : "Sign up"}
@@ -204,12 +202,7 @@ function AuthPage() {
               </div>
             </div>
 
-            <Button
-              type="submit"
-              variant="gold"
-              className="w-full font-bold"
-              disabled={loading}
-            >
+            <Button type="submit" variant="gold" className="w-full font-bold" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {tab === "login" ? "Log in" : "Create account"}
             </Button>
@@ -228,11 +221,7 @@ function AuthPage() {
             onClick={handleGoogle}
             disabled={googleLoading}
           >
-            {googleLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <GoogleIcon />
-            )}
+            {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
             Continue with Google
           </Button>
         </div>

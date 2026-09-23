@@ -85,7 +85,12 @@ function RolesPage() {
           <p className="font-display text-lg font-bold">Users</p>
           <div className="relative w-72">
             <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input className="pl-8" placeholder="Search users" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input
+              className="pl-8"
+              placeholder="Search users"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -108,9 +113,14 @@ function RolesPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
-                        {has.length === 0 && <span className="text-xs text-muted-foreground">user</span>}
+                        {has.length === 0 && (
+                          <span className="text-xs text-muted-foreground">user</span>
+                        )}
                         {has.map((r) => (
-                          <span key={r} className="inline-flex items-center gap-1 rounded-full bg-gold-soft px-2 py-0.5 text-[10px] font-bold uppercase">
+                          <span
+                            key={r}
+                            className="inline-flex items-center gap-1 rounded-full bg-gold-soft px-2 py-0.5 text-[10px] font-bold uppercase"
+                          >
                             {ROLE_LABELS[r as StaffRole] ?? r}
                             {r !== "user" && (
                               <button
@@ -129,16 +139,24 @@ function RolesPage() {
                       <div className="flex justify-end gap-1">
                         <Select
                           value={pendingRole[u.id] ?? ""}
-                          onValueChange={(v) => setPendingRole((s) => ({ ...s, [u.id]: v as StaffRole }))}
+                          onValueChange={(v) =>
+                            setPendingRole((s) => ({ ...s, [u.id]: v as StaffRole }))
+                          }
                         >
-                          <SelectTrigger className="h-8 w-40"><SelectValue placeholder="Pick role" /></SelectTrigger>
+                          <SelectTrigger className="h-8 w-40">
+                            <SelectValue placeholder="Pick role" />
+                          </SelectTrigger>
                           <SelectContent>
                             {(Object.keys(ROLE_LABELS) as StaffRole[]).map((r) => (
-                              <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                              <SelectItem key={r} value={r}>
+                                {ROLE_LABELS[r]}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <Button size="sm" variant="gold" onClick={() => assign(u.id)}>Grant</Button>
+                        <Button size="sm" variant="gold" onClick={() => assign(u.id)}>
+                          Grant
+                        </Button>
                       </div>
                     </td>
                   </tr>

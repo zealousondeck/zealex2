@@ -21,7 +21,9 @@ function ReferralsAdmin() {
   const update = useUpdateSetting();
   const adjust = useSetReferralEarnings();
   const [pct, setPct] = useState<string>("");
-  const [adjustments, setAdjustments] = useState<Record<string, { delta: string; reason: string }>>({});
+  const [adjustments, setAdjustments] = useState<Record<string, { delta: string; reason: string }>>(
+    {},
+  );
 
   if (!allowed)
     return (
@@ -69,7 +71,11 @@ function ReferralsAdmin() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat icon={Users} label="Total referrals" value={String(overview?.totalRefs ?? 0)} />
-        <Stat icon={Wallet} label="Commission paid" value={nairaFormatter.format(overview?.totalPaid ?? 0)} />
+        <Stat
+          icon={Wallet}
+          label="Commission paid"
+          value={nairaFormatter.format(overview?.totalPaid ?? 0)}
+        />
         <Stat icon={TrendingUp} label="Current rate" value={`${current}%`} />
       </div>
 
@@ -81,7 +87,14 @@ function ReferralsAdmin() {
         <div className="flex gap-2">
           <div className="flex-1">
             <Label className="text-xs">Percent (%)</Label>
-            <Input type="number" min="0" max="100" step="0.5" value={value} onChange={(e) => setPct(e.target.value)} />
+            <Input
+              type="number"
+              min="0"
+              max="100"
+              step="0.5"
+              value={value}
+              onChange={(e) => setPct(e.target.value)}
+            />
           </div>
           <Button variant="gold" className="self-end" onClick={savePct} disabled={update.isPending}>
             Save
@@ -106,7 +119,13 @@ function ReferralsAdmin() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {isLoading && <tr><td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">Loading…</td></tr>}
+              {isLoading && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
+                    Loading…
+                  </td>
+                </tr>
+              )}
               {(overview?.top ?? []).map((r, i) => {
                 const a = adjustments[r.user_id] ?? { delta: "", reason: "" };
                 return (
@@ -126,22 +145,38 @@ function ReferralsAdmin() {
                           placeholder="±₦"
                           className="h-8 w-24"
                           value={a.delta}
-                          onChange={(e) => setAdjustments((s) => ({ ...s, [r.user_id]: { ...a, delta: e.target.value } }))}
+                          onChange={(e) =>
+                            setAdjustments((s) => ({
+                              ...s,
+                              [r.user_id]: { ...a, delta: e.target.value },
+                            }))
+                          }
                         />
                         <Input
                           placeholder="Reason"
                           className="h-8 w-32"
                           value={a.reason}
-                          onChange={(e) => setAdjustments((s) => ({ ...s, [r.user_id]: { ...a, reason: e.target.value } }))}
+                          onChange={(e) =>
+                            setAdjustments((s) => ({
+                              ...s,
+                              [r.user_id]: { ...a, reason: e.target.value },
+                            }))
+                          }
                         />
-                        <Button size="sm" variant="gold" onClick={() => submitAdjust(r.user_id)}>Apply</Button>
+                        <Button size="sm" variant="gold" onClick={() => submitAdjust(r.user_id)}>
+                          Apply
+                        </Button>
                       </div>
                     </td>
                   </tr>
                 );
               })}
               {!isLoading && (overview?.top ?? []).length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No referrals yet.</td></tr>
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                    No referrals yet.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>

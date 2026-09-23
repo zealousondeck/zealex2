@@ -96,9 +96,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Zealex" },
       { name: "twitter:title", content: "Zealex Exchange — Trade Gift Cards & Crypto Instantly" },
-      { name: "twitter:description", content: "Zealex Exchange is a premium platform to trade gift cards and cryptocurrency at the best rates. Fast payouts, bank-grade security, and 24/7 support." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/74021bc3-84ad-406d-b818-e6db16ba7857/id-preview-037eb633--b2eef918-7243-48ec-b53c-3839d5d6baca.lovable.app-1783949892402.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/74021bc3-84ad-406d-b818-e6db16ba7857/id-preview-037eb633--b2eef918-7243-48ec-b53c-3839d5d6baca.lovable.app-1783949892402.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Zealex Exchange is a premium platform to trade gift cards and cryptocurrency at the best rates. Fast payouts, bank-grade security, and 24/7 support.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/74021bc3-84ad-406d-b818-e6db16ba7857/id-preview-037eb633--b2eef918-7243-48ec-b53c-3839d5d6baca.lovable.app-1783949892402.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/74021bc3-84ad-406d-b818-e6db16ba7857/id-preview-037eb633--b2eef918-7243-48ec-b53c-3839d5d6baca.lovable.app-1783949892402.png",
+      },
     ],
     links: [
       {
@@ -111,7 +123,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
     ],
   }),
   shellComponent: RootShell,
@@ -144,7 +156,11 @@ function RootComponent() {
         return;
       }
       router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      if (event === "SIGNED_IN") {
+        queryClient.clear();
+      } else if (event !== "SIGNED_OUT") {
+        queryClient.invalidateQueries();
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, [router, queryClient]);
@@ -157,4 +173,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-

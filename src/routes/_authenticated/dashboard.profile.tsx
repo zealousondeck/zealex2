@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/dashboard/ThemeToggle";
+import { clearDepositAttempts } from "@/lib/deposit-attempts";
 
 export const Route = createFileRoute("/_authenticated/dashboard/profile")({
   component: ProfilePage,
@@ -55,6 +56,8 @@ function ProfilePage() {
   async function handleSignOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
+    const { data } = await supabase.auth.getUser();
+    if (data.user?.id) clearDepositAttempts(data.user.id);
     await supabase.auth.signOut();
     toast.success("Signed out");
     navigate({ to: "/auth", replace: true });
@@ -82,9 +85,7 @@ function ProfilePage() {
           {isLoading ? (
             <Skeleton className="h-6 w-40" />
           ) : (
-            <p className="truncate text-lg font-bold">
-              {profile?.full_name ?? "Zealex user"}
-            </p>
+            <p className="truncate text-lg font-bold">{profile?.full_name ?? "Zealex user"}</p>
           )}
           <p className="flex items-center gap-1.5 truncate text-sm text-muted-foreground">
             <Mail className="h-3.5 w-3.5" /> {profile?.email}

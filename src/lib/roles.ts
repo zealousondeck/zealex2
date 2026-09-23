@@ -9,14 +9,17 @@ export function useIsAdmin() {
     queryFn: async (): Promise<boolean> => {
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
+
       if (!uid) return false;
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", uid)
-        .in("role", STAFF_ROLES as any);
-      if (error) return false;
-      return (data ?? []).length > 0;
+
+      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", uid);
+
+      if (error) {
+        console.error(error);
+        return false;
+      }
+
+      return (data ?? []).some((r) => STAFF_ROLES.includes(r.role));
     },
   });
 }

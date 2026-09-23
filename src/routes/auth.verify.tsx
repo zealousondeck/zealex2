@@ -6,11 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/site/Logo";
 import { Button } from "@/components/ui/button";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 const searchSchema = z.object({
   email: z.string().catch(""),
@@ -81,10 +77,7 @@ function VerifyPage() {
           <h1 className="mt-4 text-2xl font-bold">Verify your email</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Enter the 6-digit code we sent to{" "}
-            <span className="font-semibold text-foreground">
-              {email || "your email"}
-            </span>
-            .
+            <span className="font-semibold text-foreground">{email || "your email"}</span>.
           </p>
 
           <div className="mt-6 flex justify-center">

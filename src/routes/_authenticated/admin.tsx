@@ -27,25 +27,41 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useMyPermissions, type Permission } from "@/lib/permissions";
+import { clearDepositAttempts } from "@/lib/deposit-attempts";
+import type { LucideIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
     const { data: userData } = await supabase.auth.getUser();
+
     const uid = userData.user?.id;
-    if (!uid) throw redirect({ to: "/auth" });
-    const { data } = await supabase
+
+    if (!uid) {
+      throw redirect({ to: "/auth" });
+    }
+
+    const { data: roles, error } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", uid)
-      .in("role", ["admin", "super_admin", "finance", "support", "kyc_officer", "moderator"] as any);
-    if (!data || data.length === 0) {
+      .eq("user_id", uid);
+
+    if (error) {
+      console.error("Role check failed:", error);
+      throw redirect({ to: "/dashboard" });
+    }
+
+    const STAFF_ROLES = ["admin", "super_admin", "finance", "support", "kyc_officer", "moderator"];
+
+    const isStaff = (roles ?? []).some((r) => STAFF_ROLES.includes(String(r.role)));
+
+    if (!isStaff) {
       throw redirect({ to: "/dashboard" });
     }
   },
   component: AdminLayout,
 });
 
-type NavItem = { to: string; label: string; icon: any; exact?: boolean; perm: Permission };
+type NavItem = { to: string; label: string; icon: LucideIcon; exact?: boolean; perm: Permission };
 
 const NAV: NavItem[] = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard, exact: true, perm: "view_admin" },
@@ -56,12 +72,27 @@ const NAV: NavItem[] = [
   { to: "/admin/exchange", label: "Crypto Orders", icon: Bitcoin, perm: "manage_transactions" },
   { to: "/admin/giftcards", label: "Gift Cards", icon: Gift, perm: "manage_transactions" },
   { to: "/admin/deposits", label: "Deposits", icon: ArrowDownLeft, perm: "manage_deposits" },
-  { to: "/admin/withdrawals", label: "Withdrawals", icon: ArrowUpRight, perm: "manage_withdrawals" },
-  { to: "/admin/transactions", label: "Transactions", icon: ArrowLeftRight, perm: "manage_transactions" },
+  {
+    to: "/admin/withdrawals",
+    label: "Withdrawals",
+    icon: ArrowUpRight,
+    perm: "manage_withdrawals",
+  },
+  {
+    to: "/admin/transactions",
+    label: "Transactions",
+    icon: ArrowLeftRight,
+    perm: "manage_transactions",
+  },
   { to: "/admin/wallets", label: "Wallets", icon: Wallet, perm: "manage_wallets" },
   { to: "/admin/referrals", label: "Referrals", icon: Users2, perm: "manage_referrals" },
   { to: "/admin/notifications", label: "Notifications", icon: Bell, perm: "send_notifications" },
-  { to: "/admin/announcements", label: "Announcements", icon: Megaphone, perm: "manage_announcements" },
+  {
+    to: "/admin/announcements",
+    label: "Announcements",
+    icon: Megaphone,
+    perm: "manage_announcements",
+  },
   { to: "/admin/settings", label: "Settings", icon: SettingsIcon, perm: "manage_settings" },
   { to: "/admin/audit", label: "Audit Logs", icon: History, perm: "view_audit" },
 ];
@@ -83,6 +114,8 @@ function Inner() {
   async function signOut() {
     await qc.cancelQueries();
     qc.clear();
+    const { data } = await supabase.auth.getUser();
+    if (data.user?.id) clearDepositAttempts(data.user.id);
     await supabase.auth.signOut();
     toast.success("Signed out");
     navigate({ to: "/auth", replace: true });
@@ -117,7 +150,11 @@ function Inner() {
           >
             <Home className="h-4 w-4" /> User dashboard
           </Link>
-          <Button variant="ghost" className="justify-start gap-3 font-semibold text-muted-foreground" onClick={signOut}>
+          <Button
+            variant="ghost"
+            className="justify-start gap-3 font-semibold text-muted-foreground"
+            onClick={signOut}
+          >
             <LogOut className="h-5 w-5" /> Sign out
           </Button>
         </div>

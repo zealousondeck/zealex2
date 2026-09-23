@@ -18,11 +18,7 @@ export function ReceiptActions({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          size="sm"
-          variant="outline"
-          className={size === "xs" ? "h-7 px-2 text-xs" : ""}
-        >
+        <Button size="sm" variant="outline" className={size === "xs" ? "h-7 px-2 text-xs" : ""}>
           <Download className="mr-1.5 h-3.5 w-3.5" />
           Receipt
         </Button>

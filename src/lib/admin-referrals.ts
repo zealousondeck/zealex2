@@ -61,7 +61,15 @@ export function useReferralOverview() {
 export function useSetReferralEarnings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ referrerId, delta, reason }: { referrerId: string; delta: number; reason: string }) => {
+    mutationFn: async ({
+      referrerId,
+      delta,
+      reason,
+    }: {
+      referrerId: string;
+      delta: number;
+      reason: string;
+    }) => {
       // Update the aggregate simply by inserting an adjustment row via updating an existing referral row's earnings
       // Simpler: update the sum on the most recent referral row for that referrer
       const { data: latest } = await supabase

@@ -8,6 +8,7 @@ import { Logo } from "@/components/site/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { clearDepositAttempts } from "@/lib/deposit-attempts";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -51,6 +52,8 @@ function ResetPasswordPage() {
       const { error } = await supabase.auth.updateUser({ password: result.data });
       if (error) throw error;
       toast.success("Password updated — please log in");
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user?.id) clearDepositAttempts(userData.user.id);
       await supabase.auth.signOut();
       navigate({ to: "/auth", replace: true });
     } catch (err) {

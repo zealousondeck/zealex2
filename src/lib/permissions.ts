@@ -2,12 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type StaffRole =
-  | "super_admin"
-  | "admin"
-  | "finance"
-  | "support"
-  | "kyc_officer"
-  | "moderator";
+  "super_admin" | "admin" | "finance" | "support" | "kyc_officer" | "moderator";
 
 export type Permission =
   | "view_admin"
@@ -66,12 +61,7 @@ export const ROLE_PERMISSIONS: Record<StaffRole, Permission[]> = {
     "manage_wallets",
     "manage_referrals",
   ],
-  support: [
-    "view_admin",
-    "manage_users",
-    "send_notifications",
-    "manage_announcements",
-  ],
+  support: ["view_admin", "manage_users", "send_notifications", "manage_announcements"],
   kyc_officer: ["view_admin", "review_kyc"],
   moderator: ["view_admin", "manage_announcements", "send_notifications"],
 };
@@ -92,10 +82,7 @@ export function useMyRoles() {
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
       if (!uid) return [];
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", uid);
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid);
       return (data ?? [])
         .map((r) => r.role as string)
         .filter((r): r is StaffRole => r in ROLE_PERMISSIONS);

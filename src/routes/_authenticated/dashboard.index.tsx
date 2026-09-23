@@ -11,12 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { useState } from "react";
-import {
-  useWallet,
-  useTransactions,
-  useProfile,
-  type Transaction,
-} from "@/lib/dashboard-data";
+import { useWallet, useTransactions, useProfile, type Transaction } from "@/lib/dashboard-data";
 import { nairaFormatter } from "@/lib/market-data";
 import { StageTracker } from "@/components/dashboard/StageTracker";
 import { ReceiptActions } from "@/components/dashboard/ReceiptActions";
@@ -55,9 +50,7 @@ function WalletPage() {
       {/* Wallet summary */}
       <div className="overflow-hidden rounded-3xl bg-gradient-ink p-6 text-ink-foreground shadow-card">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-ink-foreground/70">
-            Available balance
-          </span>
+          <span className="text-sm font-medium text-ink-foreground/70">Available balance</span>
           <button
             onClick={() => setHidden((v) => !v)}
             className="grid h-8 w-8 place-items-center rounded-lg bg-white/10"
@@ -106,9 +99,7 @@ function WalletPage() {
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-gold-soft text-foreground">
                 <action.icon className="h-5 w-5" />
               </span>
-              <span className="text-xs font-semibold leading-tight">
-                {action.label}
-              </span>
+              <span className="text-xs font-semibold leading-tight">{action.label}</span>
             </Link>
           ))}
         </div>
@@ -216,9 +207,7 @@ export function TransactionRow({ tx }: { tx: Transaction }) {
               { label: "Type", value: `${tx.type} · ${tx.category}` },
               { label: "Asset", value: tx.asset },
               { label: "Amount", value: nairaFormatter.format(Number(tx.amount)) },
-              ...(tx.quantity != null
-                ? [{ label: "Quantity", value: String(tx.quantity) }]
-                : []),
+              ...(tx.quantity != null ? [{ label: "Quantity", value: String(tx.quantity) }] : []),
             ],
           }}
         />

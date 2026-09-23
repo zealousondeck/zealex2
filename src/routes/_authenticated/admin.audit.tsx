@@ -49,7 +49,9 @@ function AuditPage() {
                   <td className="px-4 py-3 text-xs">
                     {log.entity_type ?? "—"}
                     {log.entity_id && (
-                      <span className="ml-1 text-muted-foreground">· {log.entity_id.slice(0, 8)}…</span>
+                      <span className="ml-1 text-muted-foreground">
+                        · {log.entity_id.slice(0, 8)}…
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3 max-w-md">
