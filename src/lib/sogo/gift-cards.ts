@@ -104,7 +104,7 @@ export const listGiftCardCatalog = createServerFn({ method: "GET" })
     return normalizeGiftCardCatalog(payload).map((card) => ({
       name: card.name ?? "",
       slug: card.slug ?? "",
-      currency: card.currency ?? "USD",
+      currency: card.currency || "USD",
       countries: card.countries ?? [],
       cardTypes: card.card_types ?? [],
       minAmount: Number(card.min_amount ?? 0),

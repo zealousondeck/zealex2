@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/")({
 const quickActions = [
   { to: "/dashboard/deposit", label: "Deposit", icon: ArrowDownLeft },
   { to: "/dashboard/withdraw", label: "Withdraw", icon: ArrowUpRight },
-  { to: "/dashboard/exchange", label: "Exchange", icon: Bitcoin },
+  { to: "/dashboard/crypto", label: "Exchange", icon: Bitcoin },
   { to: "/dashboard/exchange", label: "Gift card", icon: Gift },
   { to: "/dashboard/kyc", label: "Verify KYC", icon: ShieldCheck },
   { to: "/dashboard/referrals", label: "Refer & earn", icon: Users },

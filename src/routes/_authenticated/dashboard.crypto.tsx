@@ -193,7 +193,7 @@ function CryptoExchangePage() {
       const result = await generateAddress({ data: { asset: symbol, network } });
       if (result.address) {
         setSogoAddress(result.address);
-        toast.success("Sogo deposit address generated");
+        toast.success("Deposit address generated");
       } else {
         toast.error("Unable to generate a deposit address right now.");
       }
