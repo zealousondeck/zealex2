@@ -44,6 +44,23 @@ export async function reserveTradeIntent({
 }): Promise<TradeIntentResult> {
   const normalized = JSON.stringify(payload, Object.keys(payload).sort());
   const intentKey = crypto.createHash("sha256").update(`${userId}:${tradeType}:${normalized}`).digest("hex");
+  const reservationReference = `intent:${intentKey}`;
+
+  const reopenFailedReservation = async (reservationId: string) => {
+    const { data, error } = await supabaseAdmin
+      .from("sogo_provider_records")
+      .update({
+        provider_reference: reservationReference,
+        provider_status: "reserved",
+      } as never)
+      .eq("id", reservationId)
+      .eq("provider_status", "failed")
+      .select("id")
+      .maybeSingle();
+
+    if (error) throw error;
+    return data?.id;
+  };
 
   const { data: existing, error: existingError } = await supabaseAdmin
     .from("sogo_provider_records")
@@ -54,6 +71,13 @@ export async function reserveTradeIntent({
   if (existingError) throw existingError;
 
   if (existing) {
+    if (existing.provider_status === "failed") {
+      const reservationId = await reopenFailedReservation(existing.id);
+      if (reservationId) {
+        return { duplicate: false, intentKey, reservationId };
+      }
+    }
+
     return {
       duplicate: true,
       intentKey,
@@ -63,7 +87,6 @@ export async function reserveTradeIntent({
     };
   }
 
-  const reservationReference = `intent:${intentKey}`;
   const { data: reservation, error: reservationError } = await supabaseAdmin
     .from("sogo_provider_records")
     .insert({
@@ -85,6 +108,13 @@ export async function reserveTradeIntent({
         .single();
 
       if (duplicateError) throw duplicateError;
+      if (duplicate.provider_status === "failed") {
+        const reservationId = await reopenFailedReservation(duplicate.id);
+        if (reservationId) {
+          return { duplicate: false, intentKey, reservationId };
+        }
+      }
+
       return {
         duplicate: true,
         intentKey,
