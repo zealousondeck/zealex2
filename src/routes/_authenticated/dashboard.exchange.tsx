@@ -89,7 +89,16 @@ function ExchangePage() {
 
   const catalogCards: GiftCardOption[] =
     Array.isArray(catalogQuery.data) && catalogQuery.data.length > 0
-      ? (catalogQuery.data as GiftCardOption[])
+      ? catalogQuery.data.map((card) => ({
+          brand: card.name,
+          slug: card.slug,
+          category: "Gift card",
+          currency: card.currency,
+          ratePerUnit: 0,
+          change24h: 0,
+          countries: card.countries,
+          card_types: card.cardTypes,
+        }))
       : giftCards;
 
   const [mode, setMode] = useState<TradeMode>(tab);
