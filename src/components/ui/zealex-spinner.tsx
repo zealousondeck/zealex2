@@ -72,7 +72,7 @@ export function ZealexLoadingScreen({
       <div className="flex flex-col items-center gap-6 text-center">
         <div className="relative grid h-20 w-20 place-items-center sm:h-24 sm:w-24">
           <div className="absolute inset-0 rounded-full border border-gold/15" />
-          <ZealexSpinner size="page" label={message} className="shadow-gold" />
+          <ZealexSpinner size="lg" label={message} className="shadow-gold sm:h-16 sm:w-16" />
         </div>
         <div className="space-y-2">
           <p className="text-sm font-semibold text-foreground sm:text-base">{message}</p>
