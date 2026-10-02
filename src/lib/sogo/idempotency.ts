@@ -1,6 +1,14 @@
 import crypto from "node:crypto";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+type ProviderRecord = {
+  id: string;
+  provider_reference: string | null;
+  provider_status: string;
+};
+
+const providerRecords = () => (supabaseAdmin as any).from("sogo_provider_records");
+
 export type TradeIntentResult = {
   duplicate: boolean;
   intentKey: string;
@@ -18,8 +26,7 @@ export async function updateTradeIntent(
     transactionId?: string | null;
   },
 ) {
-  const { error } = await supabaseAdmin
-    .from("sogo_provider_records")
+  const { error } = await providerRecords()
     .update({
       ...(patch.providerReference ? { provider_reference: patch.providerReference } : {}),
       ...(patch.providerTransactionId !== undefined
@@ -47,8 +54,7 @@ export async function reserveTradeIntent({
   const reservationReference = `intent:${intentKey}`;
 
   const reopenFailedReservation = async (reservationId: string) => {
-    const { data, error } = await supabaseAdmin
-      .from("sogo_provider_records")
+    const { data, error } = await providerRecords()
       .update({
         provider_reference: reservationReference,
         provider_status: "reserved",
@@ -59,16 +65,16 @@ export async function reserveTradeIntent({
       .maybeSingle();
 
     if (error) throw error;
-    return data?.id;
+    return (data as Pick<ProviderRecord, "id"> | null)?.id;
   };
 
-  const { data: existing, error: existingError } = await supabaseAdmin
-    .from("sogo_provider_records")
+  const { data: existingData, error: existingError } = await providerRecords()
     .select("id, provider_reference, provider_status")
     .eq("idempotency_key", intentKey)
     .maybeSingle();
 
   if (existingError) throw existingError;
+  const existing = existingData as ProviderRecord | null;
 
   if (existing) {
     if (existing.provider_status === "failed") {
@@ -87,8 +93,7 @@ export async function reserveTradeIntent({
     };
   }
 
-  const { data: reservation, error: reservationError } = await supabaseAdmin
-    .from("sogo_provider_records")
+  const { data: reservationData, error: reservationError } = await providerRecords()
     .insert({
       user_id: userId,
       operation_type: tradeType,
@@ -101,13 +106,13 @@ export async function reserveTradeIntent({
 
   if (reservationError) {
     if (reservationError.code === "23505") {
-      const { data: duplicate, error: duplicateError } = await supabaseAdmin
-        .from("sogo_provider_records")
+      const { data: duplicateData, error: duplicateError } = await providerRecords()
         .select("id, provider_reference, provider_status")
         .eq("idempotency_key", intentKey)
         .single();
 
       if (duplicateError) throw duplicateError;
+      const duplicate = duplicateData as ProviderRecord;
       if (duplicate.provider_status === "failed") {
         const reservationId = await reopenFailedReservation(duplicate.id);
         if (reservationId) {
@@ -125,6 +130,8 @@ export async function reserveTradeIntent({
     }
     throw reservationError;
   }
+
+  const reservation = reservationData as Pick<ProviderRecord, "id">;
 
   return {
     duplicate: false,

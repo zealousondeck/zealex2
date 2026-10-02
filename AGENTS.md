@@ -10,3 +10,5 @@
 > the editor, so keep the branch in a working state.
 
 <!-- LOVABLE:END -->
+
+- Route-transition loading feedback is rendered once in the root layout using the reusable Zealex loading screen, so every page switch stays visually consistent.
