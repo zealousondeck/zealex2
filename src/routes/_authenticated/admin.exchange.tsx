@@ -292,8 +292,8 @@ function RateController({ category }: { category: "crypto" | "giftcard" }) {
             label={row.label}
             id={row.id}
             kind={category}
-            buyRate={row.buy_rate}
-            sellRate={row.sell_rate}
+            buyRate={row.buyRate}
+            sellRate={row.sellRate}
             pending={updateRate.isPending}
             onSave={(buyRate, sellRate) =>
               updateRate.mutate({ kind: category, id: row.id, buyRate, sellRate })
