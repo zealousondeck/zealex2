@@ -198,7 +198,11 @@ function CryptoExchangePage() {
         toast.error("Unable to generate a deposit address right now.");
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Unable to generate deposit address.");
+      const details =
+        error instanceof Error
+          ? `${error.name}: ${error.message}${error.stack ? `\n${error.stack}` : ""}`
+          : JSON.stringify(error, null, 2) ?? String(error);
+      toast.error(details);
     } finally {
       setAddressLoading(false);
     }
