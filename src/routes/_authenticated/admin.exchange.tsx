@@ -1,4 +1,3 @@
-const x: number = "string";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
