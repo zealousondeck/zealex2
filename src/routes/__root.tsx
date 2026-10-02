@@ -4,14 +4,17 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { ZealexLoadingScreen } from "@/components/ui/zealex-spinner";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -36,12 +39,13 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
+  const normalizedError = error instanceof Error ? error : new Error("Unknown application error");
+  console.error(normalizedError);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+    reportLovableError(normalizedError, { boundary: "tanstack_root_error_component" });
+  }, [normalizedError]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -149,6 +153,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const isNavigating = useRouterState({ select: (state) => state.isLoading });
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
@@ -169,6 +174,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      {isNavigating && <ZealexLoadingScreen />}
       <Toaster position="top-center" richColors />
     </QueryClientProvider>
   );

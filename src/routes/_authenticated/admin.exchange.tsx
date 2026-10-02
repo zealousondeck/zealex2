@@ -263,7 +263,21 @@ function RateController({ category }: { category: "crypto" | "giftcard" }) {
   const cryptoRates = useCryptoRates();
   const giftcardRates = useGiftcardRates();
   const updateRate = useUpdateAdminRate();
-  const rows = category === "crypto" ? cryptoRates.data ?? [] : giftcardRates.data ?? [];
+
+  const editors =
+    category === "crypto"
+      ? (cryptoRates.data ?? []).map((row) => ({
+          id: row.id,
+          label: `${row.symbol} · ${row.network}`,
+          buyRate: row.buy_rate,
+          sellRate: row.sell_rate,
+        }))
+      : (giftcardRates.data ?? []).map((row) => ({
+          id: row.id,
+          label: `${row.brand} · ${row.currency}`,
+          buyRate: row.buy_rate,
+          sellRate: row.sell_rate,
+        }));
 
   return (
     <section className="rounded-2xl border border-border bg-card p-4">
@@ -272,14 +286,14 @@ function RateController({ category }: { category: "crypto" | "giftcard" }) {
         <p className="text-xs text-muted-foreground">Update the buy and sell values used by this console.</p>
       </div>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {rows.map((row) => (
+        {editors.map((row) => (
           <RateEditor
             key={row.id}
-            label={category === "crypto" ? `${row.symbol} · ${row.network}` : `${row.brand} · ${row.currency}`}
+            label={row.label}
             id={row.id}
             kind={category}
-            buyRate={row.buy_rate}
-            sellRate={row.sell_rate}
+            buyRate={row.buyRate}
+            sellRate={row.sellRate}
             pending={updateRate.isPending}
             onSave={(buyRate, sellRate) =>
               updateRate.mutate({ kind: category, id: row.id, buyRate, sellRate })
