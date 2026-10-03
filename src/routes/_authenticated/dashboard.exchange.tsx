@@ -106,7 +106,9 @@ function ExchangePage() {
   const [amount, setAmount] = useState("100");
   const [cardType, setCardType] = useState("Physical");
   const [cardCountry, setCardCountry] = useState("");
-  const [additionalInfo, setAdditionalInfo] = useState("");
+  const [redemptionCode, setRedemptionCode] = useState("");
+  const [additionalNotes, setAdditionalNotes] = useState("");
+  const [cardPhoto, setCardPhoto] = useState<File | null>(null);
   const [submitState, setSubmitState] = useState<"idle" | "loading">("idle");
 
   useEffect(() => {
@@ -158,13 +160,66 @@ function ExchangePage() {
       toast.error("Select the gift card country");
       return;
     }
-    if (additionalInfo.trim().length < 10) {
-      toast.error("Enter at least 10 characters of card information");
+    if (cardType === "E-code" && !redemptionCode.trim()) {
+      toast.error("Enter the gift card redemption code");
+      return;
+    }
+    if (cardType !== "E-code" && additionalNotes.trim().length < 10) {
+      toast.error("Enter at least 10 characters of additional notes");
+      return;
+    }
+    if (cardPhoto && cardPhoto.size > 5 * 1024 * 1024) {
+      toast.error("Gift card image or PDF must be 5 MB or smaller");
+      return;
+    }
+    if (
+      cardPhoto &&
+      !cardPhoto.type.startsWith("image/") &&
+      cardPhoto.type !== "application/pdf"
+    ) {
+      toast.error("Upload an image or PDF of the gift card");
       return;
     }
 
     setSubmitState("loading");
     try {
+      let giftCardPhotoPath: string | null = null;
+      if (cardPhoto) {
+        let userId: string | null = null;
+        let path = "";
+        try {
+          const { data: userData } = await supabase.auth.getUser();
+          userId = userData.user?.id ?? null;
+          if (!userId) throw new Error("You need to be signed in");
+
+          const ext =
+            cardPhoto.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") ||
+            (cardPhoto.type === "application/pdf" ? "pdf" : "jpg");
+          path = `${userId}/giftcard/${Date.now()}.${ext}`;
+          const { error } = await supabase.storage
+            .from("Trades")
+            .upload(path, cardPhoto, { upsert: false });
+          if (error) throw error;
+          giftCardPhotoPath = path;
+        } catch (error) {
+          console.warn("[GiftCard] photo upload failed; continuing with manual review", {
+            error: error instanceof Error ? error.message : String(error),
+            path: path || undefined,
+            userId,
+          });
+          giftCardPhotoPath = "pending_manual_upload";
+        }
+      }
+
+      const additionalInfo = [
+        cardType === "E-code"
+          ? `Redemption code: ${redemptionCode.trim()}`
+          : `Additional notes: ${additionalNotes.trim()}`,
+        giftCardPhotoPath ? `Gift card photo: ${giftCardPhotoPath}` : null,
+      ]
+        .filter((line): line is string => Boolean(line))
+        .join("\n");
+
       const providerResult = await submitSell({
         data: {
           slug: selectedCard.slug ?? selectedCard.brand.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
@@ -172,7 +227,7 @@ function ExchangePage() {
           cardType: cardType === "E-code" ? "ecode" : "physical",
           cardCurrency: selectedCard.currency,
           cardAmount: numericAmount,
-          additionalInfo: additionalInfo.trim(),
+          additionalInfo,
         },
       });
 
@@ -282,7 +337,7 @@ function ExchangePage() {
                         <SelectValue placeholder="Select a gift card" />
                       </SelectTrigger>
                       <SelectContent>
-                        {giftCards.map((card) => (
+                        {catalogCards.map((card) => (
                           <SelectItem key={card.brand} value={card.brand}>
                             {card.brand} · {card.currency}
                           </SelectItem>
@@ -349,18 +404,44 @@ function ExchangePage() {
                       />
                     </div>
 
+                  </div>
+
+                  {cardType === "E-code" ? (
                     <div className="space-y-2">
-                      <Label htmlFor="sell-upload">Card details</Label>
+                      <Label htmlFor="sell-redemption-code">Redemption code</Label>
                       <Input
-                        id="sell-upload"
-                        value={additionalInfo}
-                        onChange={(e) => setAdditionalInfo(e.target.value)}
-                        placeholder={
-                          cardType === "E-code" ? "Enter redemption code" : "Describe the card"
-                        }
+                        id="sell-redemption-code"
+                        value={redemptionCode}
+                        onChange={(e) => setRedemptionCode(e.target.value)}
+                        placeholder="Enter redemption code"
+                        required
                         className="h-12 rounded-xl"
                       />
                     </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label htmlFor="sell-additional-notes">Additional notes</Label>
+                      <textarea
+                        id="sell-additional-notes"
+                        value={additionalNotes}
+                        onChange={(e) => setAdditionalNotes(e.target.value)}
+                        placeholder="Describe the card"
+                        required
+                        className="min-h-24 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="sell-photo">Gift card photo or scan (optional)</Label>
+                    <Input
+                      id="sell-photo"
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={(e) => setCardPhoto(e.target.files?.[0] ?? null)}
+                      className="h-12 rounded-xl pt-2.5"
+                    />
+                    <p className="text-xs text-muted-foreground">Image or PDF, up to 5 MB</p>
                   </div>
                 </TabsContent>
 
