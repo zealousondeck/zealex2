@@ -23,10 +23,10 @@ export const Route = createFileRoute("/_authenticated/dashboard/")({
 });
 
 const quickActions = [
-  { to: "/dashboard/deposit", label: "Deposit", icon: ArrowDownLeft },
+  { to: "/dashboard/crypto", label: "Sell Crypto", icon: Bitcoin },
+  { to: "/dashboard/exchange", label: "Sell Gift Card", icon: Gift },
   { to: "/dashboard/withdraw", label: "Withdraw", icon: ArrowUpRight },
-  { to: "/dashboard/crypto", label: "Exchange", icon: Bitcoin },
-  { to: "/dashboard/exchange", label: "Gift card", icon: Gift },
+  { to: "/dashboard/deposit", label: "Deposit", icon: ArrowDownLeft },
   { to: "/dashboard/kyc", label: "Verify KYC", icon: ShieldCheck },
   { to: "/dashboard/referrals", label: "Refer & earn", icon: Users },
 ] as const;
@@ -41,16 +41,16 @@ function WalletPage() {
   const firstName = profile?.full_name?.split(" ")[0] ?? "trader";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 sm:space-y-10">
       <div>
         <p className="text-sm font-medium text-muted-foreground">Welcome back,</p>
-        <h1 className="text-2xl font-bold capitalize">{firstName}</h1>
+        <h1 className="mt-1 text-2xl font-bold capitalize sm:text-3xl">{firstName}</h1>
       </div>
 
       {/* Wallet summary */}
-      <div className="overflow-hidden rounded-3xl bg-gradient-ink p-6 text-ink-foreground shadow-card">
+      <div className="overflow-hidden rounded-2xl bg-gradient-ink p-6 text-ink-foreground shadow-card sm:p-8">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-ink-foreground/70">Available balance</span>
+            <span className="text-sm font-medium text-ink-foreground/75">Available balance</span>
           <button
             onClick={() => setHidden((v) => !v)}
             className="grid h-8 w-8 place-items-center rounded-lg bg-white/10"
@@ -59,44 +59,57 @@ function WalletPage() {
             {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
-        <div className="mt-2 flex items-baseline gap-2">
+        <div className="mt-3 flex min-h-12 items-baseline gap-2">
           {walletLoading ? (
             <Skeleton className="h-10 w-48 bg-white/10" />
           ) : (
-            <span className="text-4xl font-bold tracking-tight">
+            <span className="text-3xl font-bold tracking-normal sm:text-4xl">
               {hidden ? "••••••" : nairaFormatter.format(balance)}
             </span>
           )}
         </div>
-        <div className="mt-6 flex gap-3">
+        <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Link
             to="/dashboard/exchange"
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gold py-3 text-sm font-bold text-gold-foreground transition-transform hover:scale-[1.02]"
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gold px-3 py-3 text-sm font-bold text-gold-foreground shadow-gold transition-colors hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
           >
-            <ArrowUpRight className="h-4 w-4" /> Exchange
+            <Bitcoin className="h-4 w-4" /> Sell Crypto
           </Link>
           <Link
             to="/dashboard/exchange"
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white/10 py-3 text-sm font-bold text-ink-foreground transition-colors hover:bg-white/15"
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-ink-foreground/20 bg-ink-foreground/10 px-3 py-3 text-sm font-bold text-ink-foreground transition-colors hover:bg-ink-foreground/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <ArrowDownLeft className="h-4 w-4" /> Withdraw
+            <Gift className="h-4 w-4" /> Sell Gift Card
+          </Link>
+          <Link
+            to="/dashboard/withdraw"
+            className="col-span-2 flex min-h-12 items-center justify-center gap-2 rounded-xl border border-ink-foreground/20 bg-ink-foreground/10 px-3 py-3 text-sm font-bold text-ink-foreground transition-colors hover:bg-ink-foreground/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:col-span-1"
+          >
+            <ArrowUpRight className="h-4 w-4" /> Withdraw
           </Link>
         </div>
       </div>
 
       {/* Quick actions */}
       <div>
-        <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+        <h2 className="mb-4 text-xs font-bold uppercase tracking-normal text-muted-foreground">
           Quick actions
         </h2>
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {quickActions.map((action) => (
             <Link
               key={action.label}
               to={action.to}
-              className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card p-4 text-center transition-colors hover:border-gold hover:bg-secondary"
+              className={cn(
+                "flex min-h-28 flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card p-4 text-center shadow-soft transition-all hover:-translate-y-0.5 hover:border-gold/60 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                quickActions.indexOf(action) < 3 && "min-h-32 border-gold/30 bg-card sm:min-h-36",
+                quickActions.indexOf(action) >= 3 && "min-h-24 bg-secondary/45 shadow-none",
+              )}
             >
-              <span className="grid h-11 w-11 place-items-center rounded-xl bg-gold-soft text-foreground">
+              <span className={cn(
+                "grid h-11 w-11 place-items-center rounded-xl text-foreground",
+                quickActions.indexOf(action) < 3 ? "bg-gold-soft" : "bg-secondary",
+              )}>
                 <action.icon className="h-5 w-5" />
               </span>
               <span className="text-xs font-semibold leading-tight">{action.label}</span>
@@ -108,7 +121,7 @@ function WalletPage() {
       {/* Recent transactions */}
       <div>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+          <h2 className="text-xs font-bold uppercase tracking-normal text-muted-foreground">
             Recent transactions
           </h2>
           <Link
@@ -118,7 +131,7 @@ function WalletPage() {
             New
           </Link>
         </div>
-        <div className="rounded-2xl border border-border bg-card">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
           {txLoading ? (
             <div className="space-y-3 p-4">
               {Array.from({ length: 4 }).map((_, i) => (
