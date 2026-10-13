@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -88,6 +88,7 @@ function DashboardInner() {
   useRealtimeSync();
 
   const navigate = useNavigate();
+  const locationHref = useRouterState({ select: (state) => state.location.href });
   const queryClient = useQueryClient();
 
   const { data: notifications } = useNotifications();
@@ -129,6 +130,10 @@ function DashboardInner() {
     };
   }, [mobileNavOpen]);
 
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [locationHref]);
+
   // rest of DashboardInner...
 
   async function handleSignOut() {
@@ -145,7 +150,7 @@ function DashboardInner() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border/80 bg-background/90 shadow-soft backdrop-blur-xl">
         <div className="relative mx-auto grid h-16 max-w-[1500px] grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 sm:px-6 lg:flex lg:gap-8 lg:px-8">
-          <div className="flex min-w-0 items-center gap-2 lg:shrink-0">
+          <div className="flex min-w-0 items-center justify-start lg:shrink-0">
             <Button
               type="button"
               variant="ghost"
@@ -156,17 +161,15 @@ function DashboardInner() {
               aria-expanded={mobileNavOpen}
               aria-controls="dashboard-mobile-nav"
             >
-              {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              <Menu className="h-5 w-5" />
             </Button>
             <div className="hidden lg:block">
               <Logo />
             </div>
           </div>
 
-          <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 lg:hidden">
-            <div className="pointer-events-auto">
-              <Logo />
-            </div>
+          <div className="justify-self-center lg:hidden">
+            <Logo />
           </div>
 
           <nav aria-label="Main navigation" className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex">
@@ -228,7 +231,7 @@ function DashboardInner() {
             </DropdownMenu>
           </nav>
 
-          <div className="flex shrink-0 items-center justify-end gap-1.5 lg:ml-auto">
+          <div className="flex min-w-0 items-center justify-end gap-1 lg:ml-auto">
             <Link
               to="/dashboard/notifications"
               className="relative grid h-10 w-10 place-items-center rounded-full text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -241,7 +244,7 @@ function DashboardInner() {
                 </span>
               )}
             </Link>
-            <ThemeToggle className="h-10 w-10 rounded-full border-0 bg-transparent shadow-none hover:bg-secondary" />
+            <ThemeToggle className="hidden h-10 w-10 rounded-full border-0 bg-transparent shadow-none hover:bg-secondary lg:grid" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -272,18 +275,36 @@ function DashboardInner() {
         </div>
       </header>
 
-      {mobileNavOpen && (
-        <div
-          className="fixed inset-0 top-16 z-40 bg-foreground/25 backdrop-blur-[2px] lg:hidden"
+      <div
+        className={cn("fixed inset-0 z-50 lg:hidden", mobileNavOpen ? "visible" : "invisible pointer-events-none")}
+        aria-hidden={!mobileNavOpen}
+      >
+        <button
+          type="button"
+          tabIndex={mobileNavOpen ? 0 : -1}
+          aria-label="Close navigation menu"
+          className={cn("absolute inset-0 bg-foreground/25 backdrop-blur-[2px] transition-opacity duration-300", mobileNavOpen ? "opacity-100" : "opacity-0")}
           onClick={() => setMobileNavOpen(false)}
-          aria-hidden={!mobileNavOpen}
+        />
+        <nav
+          id="dashboard-mobile-nav"
+          aria-label="Mobile navigation"
+          className={cn("absolute inset-y-0 left-0 flex h-full w-[85%] max-w-sm flex-col bg-card shadow-card transition-transform duration-300", mobileNavOpen ? "translate-x-0" : "-translate-x-full")}
         >
-          <nav
-            id="dashboard-mobile-nav"
-            aria-label="Mobile navigation"
-            className="max-h-[calc(100dvh-4rem)] w-full overflow-y-auto border-b border-border bg-card px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 shadow-card sm:px-6"
-            onClick={(event) => event.stopPropagation()}
-          >
+          <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4">
+            <Logo />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-xl"
+              onClick={() => setMobileNavOpen(false)}
+              aria-label="Close navigation menu"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-4">
             <div className="mx-auto flex max-w-3xl flex-col gap-1 pb-2">
               <Link
                 to={walletItem.to}
@@ -347,9 +368,23 @@ function DashboardInner() {
                 </Link>
               )}
             </div>
-          </nav>
-        </div>
-      )}
+          </div>
+          <div className="flex shrink-0 items-center justify-between border-t border-border px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+            <span className="text-sm font-semibold text-muted-foreground">Theme</span>
+            <ThemeToggle className="rounded-full border-0 bg-transparent shadow-none hover:bg-secondary" />
+          </div>
+          <div className="shrink-0 px-4 pb-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full justify-start gap-3 rounded-xl"
+              onClick={() => void handleSignOut()}
+            >
+              <LogOut className="h-5 w-5" />Logout
+            </Button>
+          </div>
+        </nav>
+      </div>
 
       <main className="mx-auto w-full max-w-6xl px-4 pb-28 pt-7 sm:px-6 sm:pt-8 lg:pb-10 lg:px-8">
         <Outlet />
