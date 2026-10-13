@@ -25,6 +25,7 @@ export type GiftCardCatalogItem = {
   slug?: string;
   countries?: string[];
   card_types?: string[];
+  sub_types?: string[];
   category?: string;
   currency?: string;
   card_type?: string;

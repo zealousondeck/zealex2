@@ -53,6 +53,7 @@ type GiftCardOption = {
   change24h: number;
   countries?: string[];
   card_types?: string[];
+  sub_types?: string[];
 };
 
 type RecentGiftCardTrade = {
@@ -98,6 +99,7 @@ function ExchangePage() {
           change24h: 0,
           countries: card.countries,
           card_types: card.cardTypes,
+          sub_types: card.subTypes,
         }))
       : giftCards;
 
@@ -106,6 +108,8 @@ function ExchangePage() {
   const [amount, setAmount] = useState("100");
   const [cardType, setCardType] = useState("Physical");
   const [cardCountry, setCardCountry] = useState("");
+  const [specificCountry, setSpecificCountry] = useState("");
+  const [subType, setSubType] = useState("");
   const [redemptionCode, setRedemptionCode] = useState("");
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [cardPhoto, setCardPhoto] = useState<File | null>(null);
@@ -160,24 +164,36 @@ function ExchangePage() {
       toast.error("Select the gift card country");
       return;
     }
-    if (cardType === "E-code" && !redemptionCode.trim()) {
-      toast.error("Enter the gift card redemption code");
+    if (cardType === "E-code" && redemptionCode.trim().length < 10) {
+      toast.error("Enter a redemption code with at least 10 characters");
       return;
     }
     if (cardType !== "E-code" && additionalNotes.trim().length < 10) {
       toast.error("Enter at least 10 characters of additional notes");
       return;
     }
-    if (cardPhoto && cardPhoto.size > 5 * 1024 * 1024) {
-      toast.error("Gift card image or PDF must be 5 MB or smaller");
+    if (cardCountry === "EU" && !specificCountry.trim()) {
+      toast.error("Enter the specific country for this EU card");
+      return;
+    }
+    if (cardType !== "E-code" && selectedCard.sub_types?.length && !selectedCard.sub_types.includes(subType)) {
+      toast.error("Select a gift card variant");
+      return;
+    }
+    if (cardType !== "E-code" && !cardPhoto) {
+      toast.error("Upload a photo of the physical gift card");
+      return;
+    }
+    if (cardPhoto && cardPhoto.size > 2 * 1024 * 1024) {
+      toast.error("Gift card image must be 2 MB or smaller");
       return;
     }
     if (
       cardPhoto &&
-      !cardPhoto.type.startsWith("image/") &&
-      cardPhoto.type !== "application/pdf"
+      cardPhoto.type !== "image/jpeg" &&
+      cardPhoto.type !== "image/png"
     ) {
-      toast.error("Upload an image or PDF of the gift card");
+      toast.error("Upload a JPEG or PNG image of the gift card");
       return;
     }
 
@@ -213,7 +229,7 @@ function ExchangePage() {
 
       const additionalInfo = [
         cardType === "E-code"
-          ? `Redemption code: ${redemptionCode.trim()}`
+          ? redemptionCode.trim()
           : `Additional notes: ${additionalNotes.trim()}`,
         giftCardPhotoPath ? `Gift card photo: ${giftCardPhotoPath}` : null,
       ]
@@ -228,6 +244,10 @@ function ExchangePage() {
           cardCurrency: selectedCard.currency,
           cardAmount: numericAmount,
           additionalInfo,
+          subType: subType || undefined,
+          specificCountry:
+            cardCountry === "EU" ? specificCountry.trim() || undefined : undefined,
+          giftCardPhotoPath: giftCardPhotoPath ?? undefined,
         },
       });
 
@@ -332,7 +352,13 @@ function ExchangePage() {
                 <TabsContent value="sell" className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="sell-brand">Gift card brand</Label>
-                    <Select value={brand} onValueChange={setBrand}>
+                    <Select
+                      value={brand}
+                      onValueChange={(value) => {
+                        setBrand(value);
+                        setSubType("");
+                      }}
+                    >
                       <SelectTrigger id="sell-brand" className="h-12 rounded-xl">
                         <SelectValue placeholder="Select a gift card" />
                       </SelectTrigger>
@@ -380,7 +406,16 @@ function ExchangePage() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="sell-card-type">Card format</Label>
-                      <Select value={cardType} onValueChange={setCardType}>
+                        <Select
+                          value={cardType}
+                          onValueChange={(value) => {
+                            setCardType(value);
+                            if (value === "E-code") {
+                              setCardPhoto(null);
+                              setSubType("");
+                            }
+                          }}
+                        >
                         <SelectTrigger id="sell-card-type" className="h-12 rounded-xl">
                           <SelectValue />
                         </SelectTrigger>
@@ -405,6 +440,37 @@ function ExchangePage() {
                     </div>
 
                   </div>
+
+                  {cardCountry === "EU" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="sell-specific-country">Specific country</Label>
+                      <Input
+                        id="sell-specific-country"
+                        value={specificCountry}
+                        onChange={(e) => setSpecificCountry(e.target.value)}
+                        placeholder="Enter country name"
+                        className="h-12 rounded-xl"
+                      />
+                    </div>
+                  )}
+
+                  {cardType !== "E-code" && Boolean(selectedCard.sub_types?.length) && (
+                    <div className="space-y-2">
+                      <Label htmlFor="sell-sub-type">Card variant</Label>
+                      <Select value={subType} onValueChange={setSubType}>
+                        <SelectTrigger id="sell-sub-type" className="h-12 rounded-xl">
+                          <SelectValue placeholder="Select a variant" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {selectedCard.sub_types?.map((variant) => (
+                            <SelectItem key={variant} value={variant}>
+                              {variant.replaceAll("_", " ")}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                   {cardType === "E-code" ? (
                     <div className="space-y-2">
@@ -432,17 +498,20 @@ function ExchangePage() {
                     </div>
                   )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="sell-photo">Gift card photo or scan (optional)</Label>
-                    <Input
-                      id="sell-photo"
-                      type="file"
-                      accept="image/*,application/pdf"
-                      onChange={(e) => setCardPhoto(e.target.files?.[0] ?? null)}
-                      className="h-12 rounded-xl pt-2.5"
-                    />
-                    <p className="text-xs text-muted-foreground">Image or PDF, up to 5 MB</p>
-                  </div>
+                  {cardType !== "E-code" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="sell-photo">Gift card photo</Label>
+                      <Input
+                        id="sell-photo"
+                        type="file"
+                        accept="image/jpeg,image/png"
+                        required
+                        onChange={(e) => setCardPhoto(e.target.files?.[0] ?? null)}
+                        className="h-12 rounded-xl pt-2.5"
+                      />
+                      <p className="text-xs text-muted-foreground">JPEG or PNG, up to 2 MB</p>
+                    </div>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="buy" className="space-y-4">

@@ -58,6 +58,9 @@ function normalizeGiftCardCatalog(payload: unknown): GiftCardCatalogItem[] {
       card_types: Array.isArray(row.card_types)
         ? row.card_types.filter((value): value is string => typeof value === "string")
         : [],
+      sub_types: Array.isArray(row.sub_types)
+        ? row.sub_types.filter((value): value is string => typeof value === "string")
+        : [],
       category: String(row.category ?? row.type ?? "General"),
       currency: String(row.currency ?? ""),
       card_type:
@@ -107,6 +110,7 @@ export const listGiftCardCatalog = createServerFn({ method: "GET" })
       currency: card.currency || "USD",
       countries: card.countries ?? [],
       cardTypes: card.card_types ?? [],
+      subTypes: card.sub_types ?? [],
       minAmount: Number(card.min_amount ?? 0),
       maxAmount: Number(card.max_amount ?? 0),
     }));
@@ -132,6 +136,7 @@ const giftCardSellSchema = z.object({
   additionalInfo: z.string().min(10).max(1000),
   subType: z.string().max(100).optional(),
   specificCountry: z.string().max(100).optional(),
+  giftCardPhotoPath: z.string().max(500).optional(),
 });
 
 export const submitGiftCardSell = createServerFn({ method: "POST" })
@@ -139,6 +144,14 @@ export const submitGiftCardSell = createServerFn({ method: "POST" })
   .validator((data: unknown) => giftCardSellSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (
+      data.giftCardPhotoPath &&
+      data.giftCardPhotoPath !== "pending_manual_upload" &&
+      !data.giftCardPhotoPath.startsWith(`${context.userId}/giftcard/`)
+    ) {
+      throw new Error("Invalid gift card image path.");
+    }
+
     const reservation = await reserveTradeIntent({
       userId: context.userId,
       tradeType: "gift_card_sell",
@@ -151,6 +164,7 @@ export const submitGiftCardSell = createServerFn({ method: "POST" })
         additionalInfo: data.additionalInfo,
         subType: data.subType,
         specificCountry: data.specificCountry,
+        giftCardPhotoPath: data.giftCardPhotoPath,
       },
     });
 
@@ -175,6 +189,27 @@ export const submitGiftCardSell = createServerFn({ method: "POST" })
     payload.set("payout_currency", "NGN");
     if (data.subType) payload.set("sub_type", data.subType);
     if (data.specificCountry) payload.set("specific_country", data.specificCountry);
+
+    if (
+      data.cardType === "physical" &&
+      data.giftCardPhotoPath &&
+      data.giftCardPhotoPath !== "pending_manual_upload"
+    ) {
+      const { data: image, error: imageError } = await supabaseAdmin.storage
+        .from("Trades")
+        .download(data.giftCardPhotoPath);
+      if (imageError || !image) {
+        console.warn("[SOGO] gift-card image download failed; continuing without image", {
+          error: imageError?.message ?? "Image not found",
+          path: data.giftCardPhotoPath,
+          userId: context.userId,
+        });
+      } else if (image.size > 2 * 1024 * 1024 || !["image/jpeg", "image/png"].includes(image.type)) {
+        throw new Error("Gift card images must be JPEG or PNG and no larger than 2 MB.");
+      } else {
+        payload.append("images[]", image, data.giftCardPhotoPath.split("/").pop() ?? "gift-card-image");
+      }
+    }
 
     const failedReference = `GC-${Date.now().toString(36).toUpperCase()}`;
 
