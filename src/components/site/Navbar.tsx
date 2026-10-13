@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Menu, X } from "lucide-react";
+import { Menu, UserRound, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
@@ -16,23 +16,37 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 glass">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Logo />
+    <header className="sticky top-0 z-50 border-b border-border/70 bg-background/90 shadow-soft backdrop-blur-xl">
+      <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 sm:px-6 lg:flex lg:justify-between lg:px-8">
+        <div className="flex items-center lg:order-1">
+          <button
+            className="grid h-10 w-10 place-items-center rounded-xl text-foreground transition-colors hover:bg-secondary lg:hidden"
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Toggle menu"
+            aria-expanded={open}
+          >
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+          <Logo className="hidden lg:inline-flex" />
+        </div>
 
-        <nav className="hidden items-center gap-8 md:flex">
+        <div className="justify-self-center lg:hidden">
+          <Logo />
+        </div>
+
+        <nav className="hidden items-center gap-1 lg:order-2 lg:flex">
           {links.map((l) => (
             <a
               key={l.href}
               href={l.href}
-              className="text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+              className="rounded-full px-4 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {l.label}
             </a>
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 lg:order-3 lg:flex">
           <Button variant="ghost" className="font-semibold" asChild>
             <Link to="/auth">Log in</Link>
           </Button>
@@ -41,29 +55,28 @@ export function Navbar() {
           </Button>
         </div>
 
-        <button
-          className="grid h-10 w-10 place-items-center rounded-lg border border-border md:hidden"
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Toggle menu"
+        <Link
+          to="/auth"
+          aria-label="Account"
+          className="grid h-10 w-10 justify-self-end place-items-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:border-gold/60 hover:bg-gold-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
         >
-          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+          <UserRound className="h-5 w-5" />
+        </Link>
       </div>
 
       <div
         className={cn(
-          "overflow-hidden border-t border-border/60 bg-background md:hidden",
-          open ? "max-h-96" : "max-h-0",
+          "absolute inset-x-0 top-full overflow-hidden border-b border-border bg-card shadow-card transition-[max-height] duration-300 lg:hidden",
+          open ? "max-h-[32rem]" : "max-h-0",
         )}
-        style={{ transition: "max-height 0.3s ease" }}
       >
-        <div className="flex flex-col gap-1 px-4 py-4">
+        <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4 sm:px-6">
           {links.map((l) => (
             <a
               key={l.href}
               href={l.href}
               onClick={() => setOpen(false)}
-              className="rounded-lg px-3 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
+              className="rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             >
               {l.label}
             </a>

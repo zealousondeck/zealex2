@@ -114,30 +114,30 @@ function AuthPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <div className="w-full max-w-md">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-background via-secondary/50 to-gold-soft/45 px-4 py-10 sm:px-6">
+      <div className="relative w-full max-w-md">
         <div className="mb-8 flex justify-center">
           <Logo />
         </div>
 
-        <div className="rounded-3xl border border-border bg-card p-6 shadow-card sm:p-8">
-          <h1 className="text-2xl font-bold">
+        <div className="rounded-2xl border border-border/80 bg-card/95 p-6 shadow-card backdrop-blur sm:p-9">
+          <h1 className="text-2xl font-bold tracking-normal sm:text-3xl">
             {tab === "login" ? "Welcome back" : "Create your account"}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
             {tab === "login"
               ? "Sign in to access your Zealex wallet."
               : "Start trading gift cards & crypto in minutes."}
           </p>
 
-          <div className="mt-6 grid grid-cols-2 gap-2 rounded-xl bg-secondary p-1">
+          <div className="mt-7 grid grid-cols-2 gap-1.5 rounded-xl border border-border/70 bg-secondary/70 p-1.5">
             {(["login", "signup"] as Tab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
                 className={cn(
-                  "rounded-lg py-2 text-sm font-bold capitalize transition-colors",
-                  tab === t ? "bg-card text-foreground shadow-soft" : "text-muted-foreground",
+                  "rounded-lg py-2.5 text-sm font-bold capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  tab === t ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {t === "login" ? "Log in" : "Sign up"}
@@ -145,7 +145,7 @@ function AuthPage() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-7 space-y-5">
             {tab === "signup" && (
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full name</Label>
@@ -202,7 +202,7 @@ function AuthPage() {
               </div>
             </div>
 
-            <Button type="submit" variant="gold" className="w-full font-bold" disabled={loading}>
+            <Button type="submit" variant="gold" size="lg" className="mt-1 w-full rounded-xl font-bold shadow-gold focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {tab === "login" ? "Log in" : "Create account"}
             </Button>
