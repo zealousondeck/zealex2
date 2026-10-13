@@ -30,6 +30,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { clearDepositAttempts } from "@/lib/deposit-attempts";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -91,7 +99,7 @@ function DashboardInner() {
   const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
-    const media = window.matchMedia("(min-width: 768px)");
+    const media = window.matchMedia("(min-width: 1024px)");
 
     const update = () => {
       setIsDesktop(media.matches);
@@ -135,238 +143,217 @@ function DashboardInner() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-card px-4 py-6 md:flex">
-        <div className="px-2">
-          <Logo />
-        </div>
-        <nav className="mt-8 flex flex-1 flex-col gap-1">
-          <Link
-            to={walletItem.to}
-            activeOptions={{ exact: walletItem.exact }}
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            activeProps={{ className: "bg-gold-soft text-foreground" }}
-          >
-            <walletItem.icon className="h-5 w-5" />
-            <span className="flex-1">{walletItem.label}</span>
-          </Link>
-
-          <div className="mt-1">
-            <button
+      <header className="sticky top-0 z-30 border-b border-border/80 bg-background/90 shadow-soft backdrop-blur-xl">
+        <div className="relative mx-auto grid h-16 max-w-[1500px] grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 sm:px-6 lg:flex lg:gap-8 lg:px-8">
+          <div className="flex min-w-0 items-center gap-2 lg:shrink-0">
+            <Button
               type="button"
-              onClick={() => setExchangeOpen((open) => !open)}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              aria-expanded={exchangeOpen}
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-xl lg:hidden"
+              onClick={() => setMobileNavOpen((open) => !open)}
+              aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileNavOpen}
+              aria-controls="dashboard-mobile-nav"
             >
-              <exchangeGroup.icon className="h-4 w-4" />
-
-              <span className="flex-1">{exchangeGroup.label}</span>
-
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 transition-transform duration-200",
-                  exchangeOpen && "rotate-180",
-                )}
-              />
-            </button>
-
-            {exchangeOpen && (
-              <div className="ml-4 flex flex-col gap-1 border-l border-border pl-2">
-                {exchangeGroup.items.map((item) => (
-                  <Link
-                    key={item.label}
-                    to={item.to}
-                    search={item.search as never}
-                    className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                    activeProps={{ className: "bg-gold-soft text-foreground" }}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {navItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              activeOptions={{ exact: item.exact }}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              activeProps={{ className: "bg-gold-soft text-foreground" }}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="flex-1">{item.label}</span>
-              {item.label === "Notifications" && unread > 0 && (
-                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-gold px-1 text-xs font-bold text-gold-foreground">
-                  {unread}
-                </span>
-              )}
-            </Link>
-          ))}
-          {isAdmin && (
-            <Link
-              to="/admin"
-              className="mt-2 flex items-center gap-3 rounded-xl border border-gold/40 bg-gold-soft px-3 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-gold hover:text-gold-foreground"
-            >
-              <LayoutDashboard className="h-5 w-5" />
-              <span className="flex-1">Admin console</span>
-            </Link>
-          )}
-        </nav>
-        <Button
-          variant="ghost"
-          className="justify-start gap-3 font-semibold text-muted-foreground"
-          onClick={handleSignOut}
-        >
-          <LogOut className="h-5 w-5" />
-          Sign out
-        </Button>
-      </aside>
-
-      <div className="md:pl-64">
-        {/* Top bar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur sm:px-6">
-          <div className="flex items-center gap-2">
-            <span className="hidden items-center gap-1.5 rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success sm:inline-flex">
-              <ShieldCheck className="h-3.5 w-3.5" /> Secure session
-            </span>
-            <div className="md:hidden">
+              {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            <div className="hidden lg:block">
               <Logo />
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {!isDesktop && (
-              <button
-                type="button"
-                onClick={() => setMobileNavOpen((open) => !open)}
-                className="md:hidden"
-                aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
-                aria-expanded={mobileNavOpen}
-                aria-controls="dashboard-mobile-nav"
-              >
-                <span className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-card text-foreground transition-colors hover:bg-secondary">
-                  {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                </span>
-              </button>
-            )}
 
+          <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 lg:hidden">
+            <div className="pointer-events-auto">
+              <Logo />
+            </div>
+          </div>
+
+          <nav aria-label="Main navigation" className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex">
+            <Link
+              to={walletItem.to}
+              activeOptions={{ exact: walletItem.exact }}
+              className="rounded-full border-b-2 border-transparent px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              activeProps={{ className: "!border-gold bg-gold-soft/60 text-foreground" }}
+            >
+              Wallet
+            </Link>
+            {exchangeGroup.items.map((item) => (
+              <Link
+                key={item.label}
+                to={item.to}
+                search={item.search as never}
+                className="whitespace-nowrap rounded-full border-b-2 border-transparent px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                activeProps={{ className: "!border-gold bg-gold-soft/60 text-foreground" }}
+              >
+                {item.label === "Gift Card Exchange" ? "Gift Cards" : item.label === "Crypto Exchange" ? "Crypto" : "History"}
+              </Link>
+            ))}
+            <Link
+              to="/dashboard/deposit"
+              className="whitespace-nowrap rounded-full border-b-2 border-transparent px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              activeProps={{ className: "!border-gold bg-gold-soft/60 text-foreground" }}
+            >
+              Deposit
+            </Link>
+            <Link
+              to="/dashboard/withdraw"
+              className="whitespace-nowrap rounded-full border-b-2 border-transparent px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              activeProps={{ className: "!border-gold bg-gold-soft/60 text-foreground" }}
+            >
+              Withdraw
+            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="gap-1 rounded-full px-3 text-sm font-semibold text-muted-foreground">
+                  More <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-52 rounded-xl p-1.5">
+                <DropdownMenuLabel className="px-3 py-2 text-xs text-muted-foreground">Your workspace</DropdownMenuLabel>
+                {navItems.filter((item) => item.label === "Referrals" || item.label === "Announcements").map((item) => (
+                  <DropdownMenuItem key={item.to} asChild className="rounded-lg px-3 py-2.5">
+                    <Link to={item.to}><item.icon className="h-4 w-4" />{item.label}</Link>
+                  </DropdownMenuItem>
+                ))}
+                {isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild className="rounded-lg px-3 py-2.5">
+                      <Link to="/admin"><LayoutDashboard className="h-4 w-4" />Admin console</Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </nav>
+
+          <div className="flex shrink-0 items-center justify-end gap-1.5 lg:ml-auto">
             <Link
               to="/dashboard/notifications"
-              className={cn(
-                "relative grid h-10 w-10 place-items-center rounded-xl border border-border bg-card text-foreground transition-colors hover:bg-secondary",
-              )}
+              className="relative grid h-10 w-10 place-items-center rounded-full text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Notifications"
             >
               <Bell className="h-5 w-5" />
               {unread > 0 && (
-                <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-gold px-1 text-[10px] font-bold text-gold-foreground">
+                <span className="absolute right-0 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-gold px-1 text-[10px] font-bold text-gold-foreground">
                   {unread}
                 </span>
               )}
             </Link>
-            <ThemeToggle />
+            <ThemeToggle className="h-10 w-10 rounded-full border-0 bg-transparent shadow-none hover:bg-secondary" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 rounded-full border-border bg-card shadow-sm hover:border-gold/60 hover:bg-gold-soft focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label="Open profile menu"
+                >
+                  <User className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={10} className="w-56 rounded-xl p-1.5">
+                <DropdownMenuLabel className="px-3 py-2 text-xs text-muted-foreground">Account</DropdownMenuLabel>
+                <DropdownMenuItem asChild className="rounded-lg px-3 py-2.5">
+                  <Link to="/dashboard/profile"><User className="h-4 w-4" />Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild className="rounded-lg px-3 py-2.5">
+                  <Link to="/dashboard/kyc"><ShieldCheck className="h-4 w-4" />Verification</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => void handleSignOut()} className="rounded-lg px-3 py-2.5 text-destructive focus:bg-destructive/10 focus:text-destructive">
+                  <LogOut className="h-4 w-4" />Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {mobileNavOpen && (
-          <div
-            className="fixed inset-0 top-16 z-40 bg-black/30 backdrop-blur-[1px] md:hidden"
-            onClick={() => setMobileNavOpen(false)}
-            aria-hidden={!mobileNavOpen}
+      {mobileNavOpen && (
+        <div
+          className="fixed inset-0 top-16 z-40 bg-foreground/25 backdrop-blur-[2px] lg:hidden"
+          onClick={() => setMobileNavOpen(false)}
+          aria-hidden={!mobileNavOpen}
+        >
+          <nav
+            id="dashboard-mobile-nav"
+            aria-label="Mobile navigation"
+            className="max-h-[calc(100dvh-4rem)] w-full overflow-y-auto border-b border-border bg-card px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 shadow-card sm:px-6"
+            onClick={(event) => event.stopPropagation()}
           >
-            <nav
-              id="dashboard-mobile-nav"
-              aria-label="Mobile navigation"
-              className="max-h-[calc(100dvh-4rem)] w-full overflow-y-auto border-b border-border bg-card/95 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 shadow-card"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className="flex flex-col gap-1 pb-2">
+            <div className="mx-auto flex max-w-3xl flex-col gap-1 pb-2">
+              <Link
+                to={walletItem.to}
+                activeOptions={{ exact: walletItem.exact }}
+                onClick={() => setMobileNavOpen(false)}
+                className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                activeProps={{ className: "bg-gold-soft text-foreground" }}
+              >
+                <walletItem.icon className="h-5 w-5" />{walletItem.label}
+              </Link>
+              <button
+                type="button"
+                onClick={() => setExchangeOpen((open) => !open)}
+                className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-bold uppercase text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                aria-expanded={exchangeOpen}
+                aria-label={exchangeOpen ? "Collapse exchange menu" : "Expand exchange menu"}
+              >
+                <exchangeGroup.icon className="h-4 w-4" />
+                <span className="flex-1">{exchangeGroup.label}</span>
+                <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", exchangeOpen && "rotate-180")} />
+              </button>
+              {exchangeOpen && (
+                <div className="ml-5 flex flex-col gap-1 border-l border-border pl-2">
+                  {exchangeGroup.items.map((item) => (
+                    <Link
+                      key={item.label}
+                      to={item.to}
+                      search={item.search as never}
+                      onClick={() => setMobileNavOpen(false)}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      activeProps={{ className: "bg-gold-soft text-foreground" }}
+                    >
+                      <item.icon className="h-4 w-4" />{item.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {navItems.map((item) => (
                 <Link
-                  to={walletItem.to}
-                  activeOptions={{ exact: walletItem.exact }}
+                  key={item.to}
+                  to={item.to}
+                  activeOptions={{ exact: item.exact }}
                   onClick={() => setMobileNavOpen(false)}
                   className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                   activeProps={{ className: "bg-gold-soft text-foreground" }}
                 >
-                  <walletItem.icon className="h-5 w-5" />
-                  <span className="flex-1">{walletItem.label}</span>
+                  <item.icon className="h-5 w-5" />
+                  <span className="flex-1">{item.label}</span>
+                  {item.label === "Notifications" && unread > 0 && (
+                    <span className="grid h-5 min-w-5 place-items-center rounded-full bg-gold px-1 text-xs font-bold text-gold-foreground">{unread}</span>
+                  )}
                 </Link>
-
-                <button
-                  type="button"
-                  onClick={() => setExchangeOpen((open) => !open)}
-                  className="flex items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                  aria-expanded={exchangeOpen}
-                  aria-label={exchangeOpen ? "Collapse exchange menu" : "Expand exchange menu"}
+              ))}
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  onClick={() => setMobileNavOpen(false)}
+                  className="mt-2 flex items-center gap-3 rounded-xl border border-gold/40 bg-gold-soft px-3 py-3 text-sm font-bold text-foreground transition-colors hover:bg-gold hover:text-gold-foreground"
                 >
-                  <exchangeGroup.icon className="h-4 w-4" />
-                  <span className="flex-1">{exchangeGroup.label}</span>
-                  <ChevronDown
-                    className={cn(
-                      "h-4 w-4 transition-transform duration-200",
-                      exchangeOpen && "rotate-180",
-                    )}
-                  />
-                </button>
+                  <LayoutDashboard className="h-5 w-5" /><span className="flex-1">Admin console</span>
+                </Link>
+              )}
+            </div>
+          </nav>
+        </div>
+      )}
 
-                {exchangeOpen && (
-                  <div className="ml-4 flex flex-col gap-1 border-l border-border pl-2">
-                    {exchangeGroup.items.map((item) => (
-                      <Link
-                        key={item.label}
-                        to={item.to}
-                        search={item.search as never}
-                        onClick={() => setMobileNavOpen(false)}
-                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                        activeProps={{ className: "bg-gold-soft text-foreground" }}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        {item.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-
-                {navItems.map((item) => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    activeOptions={{ exact: item.exact }}
-                    onClick={() => setMobileNavOpen(false)}
-                    className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                    activeProps={{ className: "bg-gold-soft text-foreground" }}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <span className="flex-1">{item.label}</span>
-                    {item.label === "Notifications" && unread > 0 && (
-                      <span className="grid h-5 min-w-5 place-items-center rounded-full bg-gold px-1 text-xs font-bold text-gold-foreground">
-                        {unread}
-                      </span>
-                    )}
-                  </Link>
-                ))}
-
-                {isAdmin && (
-                  <Link
-                    to="/admin"
-                    onClick={() => setMobileNavOpen(false)}
-                    className="mt-2 flex items-center gap-3 rounded-xl border border-gold/40 bg-gold-soft px-3 py-3 text-sm font-bold text-foreground transition-colors hover:bg-gold hover:text-gold-foreground"
-                  >
-                    <LayoutDashboard className="h-5 w-5" />
-                    <span className="flex-1">Admin console</span>
-                  </Link>
-                )}
-              </div>
-            </nav>
-          </div>
-        )}
-
-        <main className="mx-auto w-full max-w-5xl px-4 pb-28 pt-6 sm:px-6 md:pb-10">
-          <Outlet />
-        </main>
-      </div>
+      <main className="mx-auto w-full max-w-6xl px-4 pb-28 pt-7 sm:px-6 sm:pt-8 lg:pb-10 lg:px-8">
+        <Outlet />
+      </main>
 
       <BottomNav />
     </div>
