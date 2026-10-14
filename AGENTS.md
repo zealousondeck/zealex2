@@ -12,3 +12,4 @@
 <!-- LOVABLE:END -->
 
 - Route-transition loading feedback is rendered once in the root layout using the reusable Zealex loading screen, so every page switch stays visually consistent.
+- Keep the floating Zealex assistant mounted once in the root layout so public and authenticated pages share one in-memory conversation without route duplication.
