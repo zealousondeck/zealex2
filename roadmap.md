@@ -1,0 +1,3 @@
+- [ ] Add AI Elements chat primitives and reusable Zealex floating assistant UI.
+- [ ] Add a server-only Gateway streaming route with confirmed-facts grounding, input/output bounds, and best-effort per-IP rate limiting.
+- [ ] Mount one assistant in the root layout and verify project checks plus the public interaction flow.
