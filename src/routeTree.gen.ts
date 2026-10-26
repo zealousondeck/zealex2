@@ -18,6 +18,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SogoWebhookRouteImport } from './routes/sogo-webhook'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AuthForgotRouteImport } from './routes/auth.forgot'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
@@ -91,6 +92,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthForgotRoute = AuthForgotRouteImport.update({
   id: '/forgot',
@@ -268,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/sogo-webhook': typeof SogoWebhookRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/api/chat': typeof ApiChatRoute
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
@@ -305,6 +312,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sogo-webhook': typeof SogoWebhookRoute
+  '/api/chat': typeof ApiChatRoute
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
@@ -346,6 +354,7 @@ export interface FileRoutesById {
   '/sogo-webhook': typeof SogoWebhookRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/api/chat': typeof ApiChatRoute
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/_authenticated/admin/announcements': typeof AuthenticatedAdminAnnouncementsRoute
@@ -387,6 +396,7 @@ export interface FileRouteTypes {
     | '/sogo-webhook'
     | '/admin'
     | '/dashboard'
+    | '/api/chat'
     | '/auth/forgot'
     | '/auth/verify'
     | '/admin/announcements'
@@ -424,6 +434,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/sogo-webhook'
+    | '/api/chat'
     | '/auth/forgot'
     | '/auth/verify'
     | '/admin/announcements'
@@ -464,6 +475,7 @@ export interface FileRouteTypes {
     | '/sogo-webhook'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
+    | '/api/chat'
     | '/auth/forgot'
     | '/auth/verify'
     | '/_authenticated/admin/announcements'
@@ -503,6 +515,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SogoWebhookRoute: typeof SogoWebhookRoute
+  ApiChatRoute: typeof ApiChatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -569,6 +582,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth/forgot': {
       id: '/auth/forgot'
@@ -887,6 +907,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SogoWebhookRoute: SogoWebhookRoute,
+  ApiChatRoute: ApiChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

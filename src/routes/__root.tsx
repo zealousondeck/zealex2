@@ -15,6 +15,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { ZealexLoadingScreen } from "@/components/ui/zealex-spinner";
+import { ZealexAssistant } from "@/components/ZealexAssistant";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -176,6 +177,8 @@ function RootComponent() {
       <Outlet />
       {isNavigating && <ZealexLoadingScreen />}
       <Toaster position="top-center" richColors />
+      {/* Shared floating assistant — one in-memory conversation across public and dashboard pages. */}
+      <ZealexAssistant />
     </QueryClientProvider>
   );
 }
