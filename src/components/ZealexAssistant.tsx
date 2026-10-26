@@ -9,11 +9,7 @@ import {
   ConversationEmptyState,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
-import {
-  Message,
-  MessageContent,
-  MessageResponse,
-} from "@/components/ai-elements/message";
+import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
 import {
   PromptInput,
   PromptInputSubmit,
@@ -41,18 +37,14 @@ const messageText = (message: UIMessage): string =>
 export function ZealexAssistant() {
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
-  const transport = useMemo(
-    () => new DefaultChatTransport({ api: "/api/chat" }),
-    []
-  );
+  const transport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
   const { messages, sendMessage, status, error, stop, regenerate } = useChat({
     transport,
   });
 
   const busy = status === "submitted" || status === "streaming";
   const lastMessage = messages[messages.length - 1];
-  const lastIsEmpty =
-    lastMessage?.role === "assistant" && messageText(lastMessage).length === 0;
+  const lastIsEmpty = lastMessage?.role === "assistant" && messageText(lastMessage).length === 0;
 
   const handleSubmit = (message: { text?: string }) => {
     const text = (message.text ?? "").trim().slice(0, MAX_INPUT_CHARS);
@@ -75,7 +67,7 @@ export function ZealexAssistant() {
           "pointer-events-auto group relative flex size-14 cursor-pointer items-center justify-center rounded-full",
           "bg-gradient-gold text-gold-foreground shadow-gold transition-transform duration-200",
           "hover:scale-105 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-          open && "opacity-0 pointer-events-none"
+          open && "opacity-0 pointer-events-none",
         )}
       >
         <MessageCircle className="size-6" />
@@ -91,7 +83,7 @@ export function ZealexAssistant() {
           aria-label="Zealex Assistant"
           className={cn(
             "pointer-events-auto fixed inset-0 flex flex-col overflow-hidden border border-border bg-background shadow-gold",
-            "md:inset-auto md:bottom-5 md:right-5 md:h-[520px] md:w-[380px] md:rounded-2xl"
+            "md:inset-auto md:bottom-5 md:right-5 md:h-[520px] md:w-[380px] md:rounded-2xl",
           )}
         >
           {/* Header */}
@@ -99,9 +91,7 @@ export function ZealexAssistant() {
             <ZealexCoin className="size-7 shrink-0" />
             <div className="min-w-0 flex-1 leading-tight">
               <p className="truncate font-semibold">Zealex Assistant</p>
-              <p className="truncate text-xs opacity-80">
-                Answers about Zealex services
-              </p>
+              <p className="truncate text-xs opacity-80">Answers about Zealex services</p>
             </div>
             <Button
               variant="ghost"
@@ -158,7 +148,7 @@ export function ZealexAssistant() {
                           className={cn(
                             "rounded-2xl",
                             message.role === "user" &&
-                              "group-[.is-user]:bg-gold group-[.is-user]:text-gold-foreground"
+                              "group-[.is-user]:bg-gold group-[.is-user]:text-gold-foreground",
                           )}
                         >
                           <MessageResponse>{text}</MessageResponse>
@@ -168,10 +158,7 @@ export function ZealexAssistant() {
                   })}
                   {error ? (
                     <div className="flex w-full max-w-[95%] flex-col gap-2 rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                      <p>
-                        Something went wrong on our end. Please try again in a
-                        moment.
-                      </p>
+                      <p>Something went wrong on our end. Please try again in a moment.</p>
                       <Button
                         variant="outline"
                         size="sm"
@@ -210,12 +197,7 @@ export function ZealexAssistant() {
                 className="max-h-28 min-h-10"
               />
               <PromptInputFooter className="justify-end">
-                <PromptInputSubmit
-                  status={status}
-                  onStop={stop}
-                  variant="gold"
-                  disabled={false}
-                />
+                <PromptInputSubmit status={status} onStop={stop} variant="gold" disabled={false} />
               </PromptInputFooter>
             </PromptInput>
             <p className="mt-1.5 px-1 text-[11px] text-muted-foreground">

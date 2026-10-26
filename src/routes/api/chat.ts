@@ -39,10 +39,10 @@ const bodySchema = z.object({
             z.object({
               type: z.string(),
               text: z.string().optional(),
-            })
+            }),
           )
           .optional(),
-      })
+      }),
     )
     .min(1),
 });
@@ -51,9 +51,7 @@ const rateBuckets = new Map<string, number[]>();
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
-  const recent = (rateBuckets.get(ip) ?? []).filter(
-    (t) => now - t < RATE_WINDOW_MS
-  );
+  const recent = (rateBuckets.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
   if (recent.length >= RATE_LIMIT) {
     rateBuckets.set(ip, recent);
     return true;
@@ -69,20 +67,17 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
-const friendly = (message: string, status: number) =>
-  Response.json({ error: message }, { status });
+const friendly = (message: string, status: number) => Response.json({ error: message }, { status });
 
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const ip =
-          request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-          "unknown";
+        const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
         if (isRateLimited(ip)) {
           return friendly(
             "You're sending messages a bit too quickly. Please wait a minute and try again.",
-            429
+            429,
           );
         }
 
@@ -92,13 +87,11 @@ export const Route = createFileRoute("/api/chat")({
         } catch {
           return friendly(
             "That message couldn't be sent. Please try rephrasing your question.",
-            400
+            400,
           );
         }
 
-        const lastUser = [...body.messages]
-          .reverse()
-          .find((m) => m.role === "user");
+        const lastUser = [...body.messages].reverse().find((m) => m.role === "user");
         const question = (
           lastUser?.parts
             ?.filter((p) => p.type === "text")
@@ -109,10 +102,7 @@ export const Route = createFileRoute("/api/chat")({
           .slice(0, MAX_INPUT_CHARS);
 
         if (!question) {
-          return friendly(
-            "Please type a question about Zealex and try again.",
-            400
-          );
+          return friendly("Please type a question about Zealex and try again.", 400);
         }
 
         // Provider is created per request so no state is shared between calls.
@@ -142,7 +132,7 @@ export const Route = createFileRoute("/api/chat")({
         } catch {
           return friendly(
             "Zealex Assistant is unavailable right now. Please try again shortly.",
-            503
+            503,
           );
         }
       },
