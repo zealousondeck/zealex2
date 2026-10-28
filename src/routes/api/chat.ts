@@ -107,7 +107,9 @@ async function loadFacts(): Promise<AssistantFact[]> {
     if (error || !data?.value) return DEFAULT_FACTS;
     const parsed = z.array(factSchema).safeParse(data.value);
     if (!parsed.success) return DEFAULT_FACTS;
-    const active = parsed.data.filter((f) => f.active !== false && f.body.trim().length > 0);
+    const active = parsed.data
+      .filter((f) => f.active !== false && f.body.trim().length > 0)
+      .map((f) => ({ id: f.id, label: f.label, body: f.body, active: true }));
     return active.length > 0 ? active : DEFAULT_FACTS;
   } catch {
     return DEFAULT_FACTS;
