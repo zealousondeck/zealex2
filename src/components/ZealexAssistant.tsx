@@ -1,7 +1,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { useMemo, useState } from "react";
-import { X, Minus, MessageCircle, RotateCcw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { X, Minus, MessageCircle, RotateCcw, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Conversation,
@@ -18,6 +18,7 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { ZealexCoin } from "@/components/site/Logo";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 const MAX_INPUT_CHARS = 500;
@@ -34,13 +35,62 @@ const messageText = (message: UIMessage): string =>
     .map((part) => part.text)
     .join("");
 
+/**
+ * Splits the trailing "Sources: id, id" citation line the model appends, so the
+ * answer body is displayed clean and the ids can be rendered as fact chips.
+ */
+const extractSources = (text: string): { body: string; ids: string[] } => {
+  const match = text.match(/\n+Sources?:\s*([\w\- ,]+)\s*$/i);
+  if (!match || match.index === undefined) return { body: text, ids: [] };
+  const ids = match[1]
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return { body: text.slice(0, match.index).trimEnd(), ids };
+};
+
+const prettyFactId = (id: string): string =>
+  id
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+type FactMap = Record<string, string>;
+
+type Feedback = "helpful" | "not_helpful";
+
 export function ZealexAssistant() {
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [factLabels, setFactLabels] = useState<FactMap>({});
+  const [feedback, setFeedback] = useState<Record<string, Feedback>>({});
   const transport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
   const { messages, sendMessage, status, error, stop, regenerate } = useChat({
     transport,
   });
+
+  // Fact labels come from the admin-managed settings (public read). Best-effort.
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "assistant_facts")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled || !data?.value) return;
+        const map: FactMap = {};
+        if (Array.isArray(data.value)) {
+          for (const f of data.value as { id?: string; label?: string }[]) {
+            if (f.id && f.label) map[f.id] = f.label;
+          }
+        }
+        setFactLabels(map);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   const busy = status === "submitted" || status === "streaming";
   const lastMessage = messages[messages.length - 1];
@@ -139,9 +189,11 @@ export function ZealexAssistant() {
                 </ConversationEmptyState>
               ) : (
                 <>
-                  {messages.map((message) => {
-                    const text = messageText(message);
-                    if (!text) return null;
+                  {messages.map((message, index) => {
+                    const { body, ids } = extractSources(messageText(message));
+                    if (!body) return null;
+                    const isLast = index === messages.length - 1;
+                    const messageFeedback = feedback[message.id];
                     return (
                       <Message key={message.id} from={message.role}>
                         <MessageContent
@@ -151,8 +203,58 @@ export function ZealexAssistant() {
                               "group-[.is-user]:bg-gold group-[.is-user]:text-gold-foreground",
                           )}
                         >
-                          <MessageResponse>{text}</MessageResponse>
+                          <MessageResponse>{body}</MessageResponse>
+                          {message.role === "assistant" && ids.length > 0 && (
+                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                              <span className="text-[11px] font-medium text-muted-foreground">
+                                Based on:
+                              </span>
+                              {ids.map((id) => (
+                                <span
+                                  key={id}
+                                  className="rounded-full border border-gold/40 bg-gold-soft px-2 py-0.5 text-[11px] font-medium text-foreground"
+                                >
+                                  {factLabels[id] ?? prettyFactId(id)}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </MessageContent>
+                        {message.role === "assistant" && !(isLast && busy) && (
+                          <div className="mt-1 flex w-full max-w-[95%] items-center gap-1 px-1">
+                            {messageFeedback ? (
+                              <span className="text-[11px] text-muted-foreground">
+                                Thanks for your feedback.
+                              </span>
+                            ) : (
+                              <>
+                                <span className="text-[11px] text-muted-foreground">
+                                  Was this helpful?
+                                </span>
+                                <button
+                                  type="button"
+                                  aria-label="Helpful answer"
+                                  onClick={() =>
+                                    setFeedback((s) => ({ ...s, [message.id]: "helpful" }))
+                                  }
+                                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                >
+                                  <ThumbsUp className="size-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  aria-label="Not helpful"
+                                  onClick={() =>
+                                    setFeedback((s) => ({ ...s, [message.id]: "not_helpful" }))
+                                  }
+                                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                >
+                                  <ThumbsDown className="size-3.5" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </Message>
                     );
                   })}
