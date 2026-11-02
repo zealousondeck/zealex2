@@ -563,7 +563,10 @@ export type Database = {
       }
       withdrawal_requests: {
         Row: {
+          account_name: string | null
+          account_number: string | null
           amount: number
+          bank_name: string | null
           created_at: string
           currency: string
           id: string
@@ -572,11 +575,17 @@ export type Database = {
           reference: string
           stage: string
           status: string
+          transfer_code: string | null
+          transfer_recipient_code: string | null
+          transfer_reference: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          account_name?: string | null
+          account_number?: string | null
           amount?: number
+          bank_name?: string | null
           created_at?: string
           currency?: string
           id?: string
@@ -585,11 +594,17 @@ export type Database = {
           reference?: string
           stage?: string
           status?: string
+          transfer_code?: string | null
+          transfer_recipient_code?: string | null
+          transfer_reference?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          account_name?: string | null
+          account_number?: string | null
           amount?: number
+          bank_name?: string | null
           created_at?: string
           currency?: string
           id?: string
@@ -598,6 +613,9 @@ export type Database = {
           reference?: string
           stage?: string
           status?: string
+          transfer_code?: string | null
+          transfer_recipient_code?: string | null
+          transfer_reference?: string | null
           updated_at?: string
           user_id?: string
         }
