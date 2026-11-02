@@ -37,20 +37,19 @@ export function useGiftCardRates() {
   });
 }
 
-export type KycGate = {
+export type KycState = {
   status: "none" | "pending" | "approved" | "rejected";
   notes: string | null;
-  isLoading: boolean;
 };
 
 /** Latest KYC submission status for the signed-in user. */
-export function useKycGate(): KycGate {
-  return useQuery({
+export function useKycGate() {
+  return useQuery<KycState>({
     queryKey: ["kyc", "gate"],
-    queryFn: async () => {
+    queryFn: async (): Promise<KycState> => {
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
-      if (!uid) return { status: "none" as const, notes: null };
+      if (!uid) return { status: "none", notes: null };
       const { data, error } = await supabase
         .from("kyc_submissions")
         .select("id, status, review_notes")
@@ -59,9 +58,9 @@ export function useKycGate(): KycGate {
         .limit(1)
         .maybeSingle();
       if (error) throw error;
-      if (!data) return { status: "none" as const, notes: null };
+      if (!data) return { status: "none", notes: null };
       return {
-        status: data.status as "pending" | "approved" | "rejected",
+        status: data.status as KycState["status"],
         notes: (data.review_notes as string | null) ?? null,
       };
     },
