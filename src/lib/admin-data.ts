@@ -63,6 +63,12 @@ export type AdminWithdrawal = {
   status: string;
   reference: string;
   created_at: string;
+  bank_name: string | null;
+  account_number: string | null;
+  account_name: string | null;
+  transfer_recipient_code: string | null;
+  transfer_code: string | null;
+  transfer_reference: string | null;
 };
 
 /** Aggregate admin dashboard stats. */
