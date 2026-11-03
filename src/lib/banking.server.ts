@@ -6,7 +6,7 @@ export type ResolveResult =
   | { verified: true; accountName: string; accountNumber: string }
   | { verified: false; reason: string; unavailable: boolean };
 
-function secret() {
+export function paystackSecret(): string {
   // Trim: pasted keys often carry stray whitespace/newlines, which Paystack
   // rejects with a bare "Invalid key".
   const key = (process.env["PAYSTACK_SECRET_KEY"] ?? "").replace(/\s+/g, "");
