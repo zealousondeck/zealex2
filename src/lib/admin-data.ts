@@ -63,6 +63,12 @@ export type AdminWithdrawal = {
   status: string;
   reference: string;
   created_at: string;
+  bank_name: string | null;
+  account_number: string | null;
+  account_name: string | null;
+  transfer_recipient_code: string | null;
+  transfer_code: string | null;
+  transfer_reference: string | null;
 };
 
 /** Aggregate admin dashboard stats. */
@@ -352,6 +358,98 @@ const updateWithdrawalStatusSchema = z.object({
   note: z.string().max(400).optional(),
 });
 
+/** Loads the withdrawal's payout destination: snapshot columns, then the saved payment method. */
+async function loadPayoutDestination(
+  supabaseAdmin: NonNullable<Awaited<ReturnType<typeof importClient>>>,
+  wd: {
+    bank_name: string | null;
+    account_number: string | null;
+    account_name: string | null;
+    payment_method_id: string | null;
+    note: string | null;
+  },
+): Promise<{ bankName: string; accountNumber: string; accountName: string } | null> {
+  if (wd.bank_name && wd.account_number) {
+    return {
+      bankName: wd.bank_name,
+      accountNumber: wd.account_number,
+      accountName: wd.account_name ?? "",
+    };
+  }
+  if (wd.payment_method_id) {
+    const { data: pm } = await supabaseAdmin
+      .from("payment_methods")
+      .select("bank_name, account_number, account_name")
+      .eq("id", wd.payment_method_id)
+      .maybeSingle();
+    if (pm?.bank_name && pm.account_number) {
+      return {
+        bankName: pm.bank_name,
+        accountNumber: pm.account_number,
+        accountName: pm.account_name ?? "",
+      };
+    }
+  }
+  // Older requests kept the destination inside the user note:
+  // "Bank · account number · account name".
+  const parts = (wd.note ?? "").split("·").map((p) => p.trim());
+  if (parts.length >= 3 && /^\d{10}$/.test(parts[1] ?? "")) {
+    return { bankName: parts[0], accountNumber: parts[1], accountName: parts[2] };
+  }
+  return null;
+}
+
+/** Atomically debits the user's NGN wallet, or throws without changing anything. */
+async function debitWallet(
+  supabaseAdmin: NonNullable<Awaited<ReturnType<typeof importClient>>>,
+  userId: string,
+  amount: number,
+): Promise<void> {
+  const { data: wallet } = await supabaseAdmin
+    .from("wallets")
+    .select("id, balance")
+    .eq("user_id", userId)
+    .eq("currency", "NGN")
+    .maybeSingle();
+  if (!wallet) throw new Error("User has no NGN wallet");
+  if (Number(wallet.balance) < amount) {
+    throw new Error(
+      `Wallet balance (${Number(wallet.balance).toLocaleString()}) is lower than the request amount`,
+    );
+  }
+  const { data: updated, error } = await supabaseAdmin
+    .from("wallets")
+    .update({ balance: Number(wallet.balance) - amount })
+    .eq("id", wallet.id)
+    .gte("balance", amount)
+    .select("id")
+    .maybeSingle();
+  if (error || !updated) throw new Error("Could not debit the wallet — please retry");
+}
+
+/** Puts a mistaken debit back on the user's wallet. */
+async function refundWallet(
+  supabaseAdmin: NonNullable<Awaited<ReturnType<typeof importClient>>>,
+  userId: string,
+  amount: number,
+): Promise<void> {
+  const { data: wallet } = await supabaseAdmin
+    .from("wallets")
+    .select("id, balance")
+    .eq("user_id", userId)
+    .eq("currency", "NGN")
+    .maybeSingle();
+  if (!wallet) return;
+  await supabaseAdmin
+    .from("wallets")
+    .update({ balance: Number(wallet.balance) + amount })
+    .eq("id", wallet.id);
+}
+
+async function importClient() {
+  return import("@/integrations/supabase/client.server");
+}
+
 export const updateWithdrawalStatusServer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data: unknown) => updateWithdrawalStatusSchema.parse(data))
@@ -363,17 +461,233 @@ export const updateWithdrawalStatusServer = createServerFn({ method: "POST" })
     );
     if (!isAdmin) throw new Error("Unauthorized: admin privileges required");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: rpcResult, error } = await (supabaseAdmin as any).rpc("process_withdrawal_approval", {
-      _withdrawal_id: data.id,
-      _admin_id: context.userId,
-      _target_status: data.status,
-      _note: data.note ?? null,
+    const { supabaseAdmin } = await importClient();
+    const { data: wd } = await supabaseAdmin
+      .from("withdrawal_requests")
+      .select(
+        "id, user_id, amount, currency, status, stage, reference, note, payment_method_id, bank_name, account_number, account_name, transfer_recipient_code, transfer_code, transfer_reference",
+      )
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!wd) throw new Error("Withdrawal request not found");
+    const amount = Number(wd.amount);
+    const destination = await loadPayoutDestination(supabaseAdmin, wd as never);
+    const naira = `₦${amount.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
+    const alreadyHasTransfer = Boolean(wd.transfer_code);
+
+    if (data.status === wd.status) {
+      return { ok: true, duplicate: true, status: wd.status, amount };
+    }
+
+    if (data.status === "rejected") {
+      if (wd.status === "paid") throw new Error("This withdrawal was already paid — it cannot be rejected");
+      await supabaseAdmin
+        .from("withdrawal_requests")
+        .update({ status: "rejected", stage: "rejected" })
+        .eq("id", wd.id);
+      await supabaseAdmin.from("notifications").insert({
+        user_id: wd.user_id,
+        title: "Withdrawal rejected",
+        body: `${naira} was not approved. Reason: ${data.note?.trim() || "Contact support for details"}.`,
+        category: "withdrawal",
+      });
+      await logAudit("withdrawal.rejected", "withdrawal_requests", wd.id, { note: data.note ?? null });
+      return { ok: true, duplicate: false, status: "rejected", amount };
+    }
+
+    if (data.status === "approved") {
+      if (wd.status === "paid") return { ok: true, duplicate: true, status: "paid", amount };
+      if (alreadyHasTransfer) {
+        // Idempotent: the transfer was already initiated in a previous click.
+        return { ok: true, duplicate: true, status: wd.status, amount };
+      }
+      if (!destination) throw new Error("No bank destination saved on this request");
+      const accountName = destination.accountName?.trim();
+      if (!accountName) throw new Error("The destination account name is missing — ask the user to resubmit");
+
+      // 1) Debit the wallet first so money can never move twice.
+      await debitWallet(supabaseAdmin, wd.user_id, amount);
+
+      let outcome;
+      try {
+        // 2) Register the recipient with Paystack.
+        const { resolveBankCode, createRecipient } = await import("@/lib/paystack-transfers.server");
+        const bankCode = await resolveBankCode(destination.bankName);
+        if (!bankCode) {
+          throw new Error(`Could not match "${destination.bankName}" to a Paystack bank — check the saved account`);
+        }
+        const recipientCode = await createRecipient({
+          accountName,
+          accountNumber: destination.accountNumber,
+          bankCode,
+        });
+
+        // 3) Send the real transfer.
+        const { initiateTransfer } = await import("@/lib/paystack-transfers.server");
+        outcome = await initiateTransfer({
+          amountNaira: amount,
+          recipientCode,
+          reference: `zlx-${wd.reference}`.slice(0, 100),
+          reason: `Zealex withdrawal ${wd.reference}`,
+        });
+      } catch (err) {
+        // Transfer never left — return the money.
+        await refundWallet(supabaseAdmin, wd.user_id, amount);
+        throw err instanceof Error ? err : new Error("Transfer failed");
+      }
+
+      if (outcome.status === "failed") {
+        await refundWallet(supabaseAdmin, wd.user_id, amount);
+        await supabaseAdmin
+          .from("withdrawal_requests")
+          .update({
+            status: "pending",
+            stage: "under_review",
+            transfer_reference: `zlx-${wd.reference}`.slice(0, 100),
+          })
+          .eq("id", wd.id);
+        throw new Error(outcome.message ?? "The payment provider rejected this transfer");
+      }
+
+      // 4) Record the payout on the request; the webhook (or "Check status") finalizes it.
+      await supabaseAdmin
+        .from("withdrawal_requests")
+        .update({
+          status: "approved",
+          stage: "approved",
+          bank_name: destination.bankName,
+          account_number: destination.accountNumber,
+          account_name: accountName,
+          transfer_recipient_code: outcome.recipientCode ?? null,
+          transfer_code: outcome.transferCode ?? null,
+          transfer_reference: outcome.transferReference ?? null,
+        })
+        .eq("id", wd.id);
+
+      await supabaseAdmin.from("notifications").insert({
+        user_id: wd.user_id,
+        title: outcome.status === "success" ? "Withdrawal paid" : "Withdrawal approved",
+        body:
+          outcome.status === "success"
+            ? `${naira} has been sent to ${accountName} (${destination.bankName}).`
+            : `${naira} to ${accountName} (${destination.bankName}) is on its way. Ref ${outcome.transferReference ?? wd.reference}.`,
+        category: "withdrawal",
+      });
+      await logAudit("withdrawal.approved", "withdrawal_requests", wd.id, {
+        transfer_code: outcome.transferCode ?? null,
+        transfer_reference: outcome.transferReference ?? null,
+        note: data.note ?? null,
+      });
+      return { ok: true, duplicate: false, status: "approved", amount, transferSent: true };
+    }
+
+    // status === "paid": manual finalization (money sent outside the flow) or
+    // confirming an existing transfer.
+    if (alreadyHasTransfer) {
+      await supabaseAdmin
+        .from("withdrawal_requests")
+        .update({ status: "paid", stage: "paid" })
+        .eq("id", wd.id);
+    } else {
+      // Manual payout: the wallet was never debited by an approval, so debit it now.
+      if (wd.status !== "paid") await debitWallet(supabaseAdmin, wd.user_id, amount);
+      if (destination) {
+        await supabaseAdmin
+          .from("withdrawal_requests")
+          .update({
+            status: "paid",
+            stage: "paid",
+            bank_name: wd.bank_name ?? destination.bankName,
+            account_number: wd.account_number ?? destination.accountNumber,
+            account_name: wd.account_name ?? destination.accountName,
+          })
+          .eq("id", wd.id);
+      } else {
+        await supabaseAdmin
+          .from("withdrawal_requests")
+          .update({ status: "paid", stage: "paid" })
+          .eq("id", wd.id);
+      }
+    }
+    await supabaseAdmin.from("notifications").insert({
+      user_id: wd.user_id,
+      title: "Withdrawal paid",
+      body: `${naira} has been marked as paid by the finance team.`,
+      category: "withdrawal",
     });
+    await logAudit("withdrawal.paid", "withdrawal_requests", wd.id, { note: data.note ?? null });
+    return { ok: true, duplicate: false, status: "paid", amount };
+  });
 
-    if (error) throw new Error(error.message || "Withdrawal update failed");
+/** Re-checks a transfer's live status with Paystack and finalizes the request. */
+export const checkWithdrawalTransferServer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const roles = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
+    if (roles.error) throw new Error("Unable to verify administrator role");
+    const isAdmin = (roles.data ?? []).some((row) =>
+      ["admin", "super_admin", "finance"].includes(String((row as { role?: string }).role ?? "")),
+    );
+    if (!isAdmin) throw new Error("Unauthorized: admin privileges required");
 
-    return rpcResult as { ok: boolean; duplicate: boolean; status: string; amount: number };
+    const { supabaseAdmin } = await importClient();
+    const { data: wd } = await supabaseAdmin
+      .from("withdrawal_requests")
+      .select(
+        "id, user_id, amount, status, reference, transfer_code, transfer_reference, bank_name, account_name",
+      )
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!wd) throw new Error("Withdrawal request not found");
+    if (!wd.transfer_code && !wd.transfer_reference) {
+      throw new Error("No transfer has been sent for this request yet");
+    }
+    if (wd.status === "paid") {
+      return { status: "paid", message: "Already finalized as paid" };
+    }
+
+    const { verifyTransfer } = await import("@/lib/paystack-transfers.server");
+    const result = await verifyTransfer(wd.transfer_code ?? wd.transfer_reference!);
+    const amount = Number(wd.amount);
+
+    if (result.status === "success") {
+      await supabaseAdmin
+        .from("withdrawal_requests")
+        .update({ status: "paid", stage: "paid" })
+        .eq("id", wd.id);
+      await supabaseAdmin.from("notifications").insert({
+        user_id: wd.user_id,
+        title: "Withdrawal paid",
+        body: `₦${amount.toLocaleString()} has been delivered to ${wd.account_name ?? "your account"}.`,
+        category: "withdrawal",
+      });
+      await logAudit("withdrawal.transfer_confirmed", "withdrawal_requests", wd.id, {
+        transfer_code: result.code ?? wd.transfer_code,
+      });
+      return { status: "paid", message: "Transfer confirmed as paid" };
+    }
+
+    if (result.status === "failed") {
+      // Money never arrived: refund and send the request back to the queue.
+      await refundWallet(supabaseAdmin, wd.user_id, amount);
+      await supabaseAdmin
+        .from("withdrawal_requests")
+        .update({ status: "pending", stage: "under_review", transfer_code: null })
+        .eq("id", wd.id);
+      await supabaseAdmin.from("notifications").insert({
+        user_id: wd.user_id,
+        title: "Withdrawal transfer failed",
+        body: `The transfer of ₦${amount.toLocaleString()} did not go through. Your wallet has been refunded and the request is back in review.`,
+        category: "withdrawal",
+      });
+      await logAudit("withdrawal.transfer_failed", "withdrawal_requests", wd.id, {
+        message: result.message ?? null,
+      });
+      return { status: "failed", message: result.message ?? "Transfer failed — wallet refunded" };
+    }
+
+    return { status: "pending", message: result.message ?? "Transfer is still processing" };
   });
 
 export function useUpdateWithdrawalStatus() {

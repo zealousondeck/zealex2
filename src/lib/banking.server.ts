@@ -6,7 +6,7 @@ export type ResolveResult =
   | { verified: true; accountName: string; accountNumber: string }
   | { verified: false; reason: string; unavailable: boolean };
 
-function secret() {
+export function paystackSecret(): string {
   // Trim: pasted keys often carry stray whitespace/newlines, which Paystack
   // rejects with a bare "Invalid key".
   const key = (process.env["PAYSTACK_SECRET_KEY"] ?? "").replace(/\s+/g, "");
@@ -23,7 +23,7 @@ export async function fetchNigerianBanks(): Promise<BankOption[]> {
   let res: Response;
   try {
     res = await fetch("https://api.paystack.co/bank?currency=NGN&perPage=100", {
-      headers: { Authorization: `Bearer ${secret()}` },
+      headers: { Authorization: `Bearer ${paystackSecret()}` },
     });
   } catch {
     throw new Error("Could not reach the bank network — please retry");
@@ -62,7 +62,7 @@ export async function resolveNubanAccount(
 ): Promise<ResolveResult> {
   let key: string;
   try {
-    key = secret();
+    key = paystackSecret();
   } catch {
     return {
       verified: false,
